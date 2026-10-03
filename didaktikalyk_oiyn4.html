@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Жұлдызшы бала мен ақылды робот Түйме — Ғарышқа саяхат</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@600;800;900&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    body {
+      font-family: 'Comfortaa', 'Nunito', cursive, sans-serif;
+      overflow-x: hidden;
+      background-color: #030712;
+    }
+
+    @keyframes floatCosmic {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(2deg); }
+    }
+    @keyframes pulseGlowRobo {
+      0%, 100% { filter: drop-shadow(0 0 6px #38bdf8); }
+      50% { filter: drop-shadow(0 0 22px #0284c7); }
+    }
+    @keyframes shanyraqSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes twinkler {
+      0%, 100% { opacity: 0.3; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+    @keyframes rocketThrust {
+      0%, 100% { transform: scaleY(1); opacity: 0.9; }
+      50% { transform: scaleY(1.3); opacity: 1; }
+    }
+
+    .animate-cosmic { animation: floatCosmic 3.5s ease-in-out infinite; }
+    .animate-glow-robo { animation: pulseGlowRobo 2s ease-in-out infinite; }
+    .animate-shanyraq { animation: shanyraqSpin 28s linear infinite; }
+    .animate-twinkle { animation: twinkler 1.5s ease-in-out infinite; }
+    .animate-thrust { animation: rocketThrust 0.35s ease-in-out infinite; }
+
+    .shadow-game {
+      box-shadow: 0 8px 0px rgba(0, 0, 0, 0.35);
+    }
+    .shadow-game-press:active {
+      transform: translateY(4px);
+      box-shadow: 0 4px 0px rgba(0, 0, 0, 0.35);
+    }
+
+    #confettiCanvas {
+      pointer-events: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none relative bg-gradient-to-b from-indigo-950 via-slate-900 to-sky-950 text-white transition-colors duration-700">
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- Жоғарғы басқару панелі және деңгей жұлдыздары (5-6 жасқа көрнекі) -->
+  <header class="w-full px-4 pt-3 pb-2 z-20 flex justify-between items-center max-w-4xl mx-auto">
+    <!-- Дыбыс батырмасы (Сөйлейтін бот ЖОҚ) -->
+    <button onclick="toggleAudio()" class="bg-cyan-500 hover:bg-cyan-400 border-4 border-cyan-300 rounded-2xl px-3 py-2 shadow-game shadow-game-press flex items-center gap-2">
+      <span id="soundIcon" class="text-2xl">🔔</span>
+      <span class="font-black text-cyan-950 text-xs sm:text-sm">Дыбыс</span>
+    </button>
+
+    <!-- Деңгей көрсеткіш 4 ғарыштық жұлдызы -->
+    <div class="flex items-center bg-slate-900/90 backdrop-blur px-3 sm:px-4 py-1.5 rounded-full border-4 border-cyan-500 shadow-game">
+      <div id="star1" class="text-2xl filter grayscale transition-all duration-300">⭐</div>
+      <div class="w-2 sm:w-3 h-1 bg-cyan-800 mx-1 rounded"></div>
+      <div id="star2" class="text-2xl filter grayscale transition-all duration-300">⭐</div>
+      <div class="w-2 sm:w-3 h-1 bg-cyan-800 mx-1 rounded"></div>
+      <div id="star3" class="text-2xl filter grayscale transition-all duration-300">⭐</div>
+      <div class="w-2 sm:w-3 h-1 bg-cyan-800 mx-1 rounded"></div>
+      <div id="star4" class="text-2xl filter grayscale transition-all duration-300">⭐</div>
+    </div>
+
+    <!-- Тәрбиеші немесе ата-ананың өз аудиосын ойнату батырмасы -->
+    <button id="voiceBtn" onclick="playCustomVoice()" class="bg-indigo-500 hover:bg-indigo-400 border-4 border-indigo-300 rounded-2xl px-3 py-2 shadow-game shadow-game-press flex items-center gap-1.5" title="Өз аудиоңызды тыңдау">
+      <span class="text-2xl">🎧</span>
+      <span class="font-black text-indigo-950 text-xs hidden sm:inline">Тыңдау</span>
+    </button>
+  </header>
+
+  <main class="w-full flex-1 max-w-4xl mx-auto px-3 py-2 flex flex-col justify-center items-center relative z-10">
+
+    <!-- Көрнекі балаларға арналған үлкен тапсырма баннері -->
+    <div class="w-full max-w-2xl bg-slate-900/90 border-4 border-cyan-400 rounded-3xl p-3 sm:p-4 mb-3 shadow-game text-center flex items-center justify-center gap-3">
+      <div id="bannerIcon" class="text-3xl shrink-0 animate-bounce">🤖</div>
+      <div id="taskInstruction" class="text-base sm:text-2xl font-black text-cyan-200 leading-snug">
+        Жарқыраған жұлдыздарды басып, робот Түймені қондыр! ✨
+      </div>
+    </div>
+
+    <!-- 1-КЕЗЕҢ: Арман мен Робот Түйменің кездесуі (Жұлдыздарды бақылау) -->
+    <section id="stage1" class="w-full flex flex-col items-center">
+      <div class="w-full max-w-xl bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 border-4 border-cyan-500 rounded-3xl p-4 sm:p-6 shadow-game flex flex-col items-center relative overflow-hidden min-h-[320px] justify-between">
+        
+        <!-- Аспандағы кішкентай ғарыштық робот Түйме (SVG) -->
+        <div class="flex flex-col items-center">
+          <div id="tuymeBot" class="w-24 h-24 sm:w-28 sm:h-28 animate-cosmic animate-glow-robo cursor-pointer" onclick="tapTuyme()">
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <!-- Antenna -->
+              <line x1="50" y1="20" x2="50" y2="7" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="50" cy="6" r="5" fill="#facc15" class="animate-twinkle"/>
+              <!-- Robot Round Head/Body -->
+              <rect x="22" y="20" width="56" height="52" rx="22" fill="#e0f2fe" stroke="#0284c7" stroke-width="3"/>
+              <!-- Screen Face -->
+              <rect x="30" y="28" width="40" height="26" rx="8" fill="#0f172a"/>
+              <!-- Cheerful Blue Eyes -->
+              <circle cx="41" cy="40" r="5" fill="#38bdf8"/>
+              <circle cx="59" cy="40" r="5" fill="#38bdf8"/>
+              <circle cx="43" cy="38" r="2" fill="#ffffff"/>
+              <circle cx="61" cy="38" r="2" fill="#ffffff"/>
+              <!-- Smile -->
+              <path d="M44 48 Q50 53 56 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Belly Button (Түйме) -->
+              <circle cx="50" cy="62" r="6" fill="#f43f5e" stroke="#fff" stroke-width="1.5"/>
+              <!-- Floating jet thrusters -->
+              <ellipse cx="36" cy="74" rx="5" ry="3" fill="#64748b"/>
+              <ellipse cx="64" cy="74" rx="5" ry="3" fill="#64748b"/>
+              <path d="M33 76 Q36 86 39 76" fill="#f97316"/>
+              <path d="M61 76 Q64 86 67 76" fill="#f97316"/>
+            </svg>
+          </div>
+          <span class="mt-1 text-xs font-black text-cyan-200 bg-cyan-950/80 px-3 py-0.5 rounded-full border border-cyan-400">
+            🤖 «Сәлем! Мен ақылды Түймемін!»
+          </span>
+        </div>
+
+        <!-- Жұлдызшы бала Арман телескопымен және 3 басатын жұлдыз -->
+        <div class="w-full mt-4 bg-slate-900/90 border-2 border-indigo-500 rounded-2xl p-3 flex flex-col items-center">
+          <div class="text-xs sm:text-sm font-black text-cyan-300 mb-2 flex items-center gap-1">
+            <span>✨ Жұлдыздар сырын ашу:</span>
+            <span id="starCatchCount" class="text-yellow-400 font-black">0</span>/3
+          </div>
+
+          <div class="w-full flex justify-around items-center">
+            <!-- Жұлдыз 1 -->
+            <button id="skyStar1" onclick="catchStar(1)" class="w-16 h-16 bg-indigo-900/80 border-2 border-yellow-400 rounded-2xl flex flex-col items-center justify-center shadow-game shadow-game-press transition-transform active:scale-95">
+              <span class="text-3xl animate-twinkle">⭐</span>
+              <span class="text-[10px] font-black text-yellow-300">1-жұлдыз</span>
+            </button>
+
+            <!-- Арман телескоппен (SVG) -->
+            <div class="w-20 h-20 flex flex-col items-center">
+              <svg viewBox="0 0 100 100" class="w-full h-full">
+                <!-- Telescope stand -->
+                <line x1="50" y1="55" x2="35" y2="92" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+                <line x1="50" y1="55" x2="65" y2="92" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+                <line x1="50" y1="55" x2="50" y2="92" stroke="#64748b" stroke-width="2.5"/>
+                <!-- Telescope tube -->
+                <polygon points="32,60 68,36 74,44 38,68" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2"/>
+                <circle cx="71" cy="40" r="5" fill="#93c5fd"/>
+                <!-- Arman boy head watching -->
+                <circle cx="28" cy="62" r="12" fill="#fed7aa"/>
+                <!-- Hair -->
+                <path d="M18 58 Q28 45 38 56 Q36 50 25 50 Z" fill="#451a03"/>
+                <!-- Eye and smile -->
+                <circle cx="31" cy="61" r="2" fill="#1e293b"/>
+                <path d="M29 67 Q33 70 36 67" fill="none" stroke="#451a03" stroke-width="1.5"/>
+                <rect x="22" y="74" width="14" height="18" rx="4" fill="#0284c7"/>
+              </svg>
+            </div>
+
+            <!-- Жұлдыз 2 -->
+            <button id="skyStar2" onclick="catchStar(2)" class="w-16 h-16 bg-indigo-900/80 border-2 border-yellow-400 rounded-2xl flex flex-col items-center justify-center shadow-game shadow-game-press transition-transform active:scale-95">
+              <span class="text-3xl animate-twinkle" style="animation-delay: 0.5s;">🌟</span>
+              <span class="text-[10px] font-black text-yellow-300">2-жұлдыз</span>
+            </button>
+
+            <!-- Жұлдыз 3 -->
+            <button id="skyStar3" onclick="catchStar(3)" class="w-16 h-16 bg-indigo-900/80 border-2 border-yellow-400 rounded-2xl flex flex-col items-center justify-center shadow-game shadow-game-press transition-transform active:scale-95">
+              <span class="text-3xl animate-twinkle" style="animation-delay: 1s;">✨</span>
+              <span class="text-[10px] font-black text-yellow-300">3-жұлдыз</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2-КЕЗЕҢ: «Біздің Жер көгілдір маржан сияқты жарқырайды!» -->
+    <section id="stage2" class="w-full hidden flex-col items-center">
+      <div class="w-full max-w-xl bg-gradient-to-b from-sky-950 via-slate-900 to-indigo-950 border-4 border-cyan-400 rounded-3xl p-4 sm:p-6 shadow-game flex flex-col items-center relative overflow-hidden min-h-[320px] justify-between">
+        
+        <div class="w-full flex justify-between items-center text-xs sm:text-sm font-black text-cyan-200 bg-slate-900/90 px-3 py-1.5 rounded-full border-2 border-cyan-400">
+          <span>🚀 Ғарыш кемесі</span>
+          <span class="text-amber-300 font-black">«Көгілдір маржан Жер!» 🌍</span>
+          <span>✨ Ғаламшар</span>
+        </div>
+
+        <!-- Ғарыш кемесінің иллюминаторы және Көгілдір Жер шары (SVG) -->
+        <div class="relative my-3 flex flex-col items-center">
+          <div class="w-44 sm:w-52 h-44 sm:h-52 rounded-full border-8 border-slate-700 bg-slate-950 relative flex items-center justify-center shadow-2xl overflow-hidden p-2">
+            <!-- Planet Earth SVG -->
+            <svg viewBox="0 0 120 120" id="earthGlobe" class="w-full h-full animate-cosmic">
+              <!-- Atmosphere Glow -->
+              <circle cx="60" cy="60" r="54" fill="#0284c7" opacity="0.3"/>
+              <!-- Ocean Blue -->
+              <circle cx="60" cy="60" r="48" fill="#0284c7"/>
+              <!-- Green Continents -->
+              <path d="M40 35 Q48 25 60 30 Q70 38 65 50 Q55 52 48 42 Z" fill="#22c55e"/>
+              <path d="M35 55 Q45 60 48 75 Q40 85 30 75 Q28 65 35 55 Z" fill="#16a34a"/>
+              <path d="M68 55 Q85 52 90 68 Q80 82 70 75 Q65 65 68 55 Z" fill="#22c55e"/>
+              <path d="M50 82 Q65 85 62 96 Q50 98 46 90 Z" fill="#86efac"/>
+              <!-- White swirling clouds -->
+              <path d="M30 40 Q50 35 70 42 Q55 48 30 40 Z" fill="#ffffff" opacity="0.6"/>
+              <path d="M45 65 Q70 60 85 70 Q65 72 45 65 Z" fill="#ffffff" opacity="0.65"/>
+            </svg>
+          </div>
+          <span class="text-xs font-black text-cyan-300 bg-cyan-950/80 px-3 py-0.5 rounded-full mt-2 border border-cyan-500">
+            🌍 «Біздің сүйікті үйіміз — Жер!»
+          </span>
+        </div>
+
+        <!-- Ғарыш кемесінің бақылау батырмасы (Бала басады) -->
+        <button id="earthInspectBtn" onclick="inspectEarth()" class="w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 border-4 border-cyan-300 text-white font-black text-base sm:text-lg py-2.5 px-4 rounded-2xl shadow-game shadow-game-press flex items-center justify-center gap-2">
+          <span>🔭</span>
+          <span>Көгілдір Жерге жақындап қарау!</span>
+          <span>✨</span>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- 3-КЕЗЕҢ: Спутник қауіпсіз жолды көрсетті -->
+    <section id="stage3" class="w-full hidden flex-col items-center">
+      <div class="w-full max-w-xl bg-gradient-to-b from-indigo-950 via-slate-900 to-sky-950 border-4 border-indigo-400 rounded-3xl p-4 sm:p-5 shadow-game flex flex-col items-center relative min-h-[320px] justify-between">
+        
+        <div class="w-full flex justify-between items-center bg-slate-900/90 px-3 py-1.5 rounded-2xl border-2 border-indigo-400">
+          <div class="flex items-center gap-1.5">
+            <span class="text-2xl">🛰️</span>
+            <span class="text-xs sm:text-sm font-black text-indigo-200">Спутник сигналын қос:</span>
+          </div>
+          <div class="bg-indigo-600 text-white font-black text-xs sm:text-sm px-2.5 py-0.5 rounded-full">
+            Жолдар: <span id="pathCount">0</span>/3
+          </div>
+        </div>
+
+        <!-- Ортадағы Спутник (SVG) мен сигнал толқындары -->
+        <div class="relative my-2 flex flex-col items-center">
+          <div id="satelliteEl" class="w-40 sm:w-48 h-24 sm:h-28 relative">
+            <svg viewBox="0 0 160 100" class="w-full h-full drop-shadow-lg">
+              <!-- Left Solar Wing -->
+              <rect x="5" y="32" width="40" height="36" rx="4" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+              <line x1="25" y1="32" x2="25" y2="68" stroke="#38bdf8" stroke-width="1.5"/>
+              <line x1="5" y1="50" x2="45" y2="50" stroke="#38bdf8" stroke-width="1.5"/>
+              <!-- Left Arm -->
+              <rect x="45" y="47" width="15" height="6" fill="#94a3b8"/>
+              <!-- Central Body -->
+              <rect x="60" y="30" width="40" height="40" rx="8" fill="#e2e8f0" stroke="#64748b" stroke-width="2.5"/>
+              <circle cx="80" cy="50" r="10" fill="#f59e0b"/>
+              <!-- Antenna Dish -->
+              <path d="M70 20 Q80 12 90 20" fill="none" stroke="#f8fafc" stroke-width="3" stroke-linecap="round"/>
+              <line x1="80" y1="30" x2="80" y2="16" stroke="#94a3b8" stroke-width="2.5"/>
+              <circle cx="80" cy="14" r="3" fill="#ef4444" class="animate-twinkle"/>
+              <!-- Right Arm -->
+              <rect x="100" y="47" width="15" height="6" fill="#94a3b8"/>
+              <!-- Right Solar Wing -->
+              <rect x="115" y="32" width="40" height="36" rx="4" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+              <line x1="135" y1="32" x2="135" y2="68" stroke="#38bdf8" stroke-width="1.5"/>
+              <line x1="115" y1="50" x2="155" y2="50" stroke="#38bdf8" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="text-[11px] sm:text-xs font-black text-cyan-200 bg-cyan-950/80 px-3 py-0.5 rounded-full mt-1 border border-cyan-400">
+            🛰️ «Жұлдыздарға баратын қауіпсіз жол!»
+          </div>
+        </div>
+
+        <!-- 3 бағыттаушы ғарыш маяктары (Балалар таңдап басады) -->
+        <div class="w-full bg-slate-900/90 rounded-2xl p-2.5 border-2 border-indigo-400 flex justify-around gap-2">
+          <button id="beacon1" onclick="activateBeacon(1, 'Жасыл маяк')" class="bg-indigo-900/80 hover:bg-indigo-800 border-2 border-emerald-400 px-3 py-2 rounded-xl shadow-game shadow-game-press flex flex-col items-center gap-1 transition-transform active:scale-95">
+            <span class="text-2xl">🟢</span>
+            <span class="text-[11px] font-black text-emerald-300">1-маяк</span>
+          </button>
+          <button id="beacon2" onclick="activateBeacon(2, 'Сары маяк')" class="bg-indigo-900/80 hover:bg-indigo-800 border-2 border-yellow-400 px-3 py-2 rounded-xl shadow-game shadow-game-press flex flex-col items-center gap-1 transition-transform active:scale-95">
+            <span class="text-2xl">🟡</span>
+            <span class="text-[11px] font-black text-yellow-300">2-маяк</span>
+          </button>
+          <button id="beacon3" onclick="activateBeacon(3, 'Көк маяк')" class="bg-indigo-900/80 hover:bg-indigo-800 border-2 border-cyan-400 px-3 py-2 rounded-xl shadow-game shadow-game-press flex flex-col items-center gap-1 transition-transform active:scale-95">
+            <span class="text-2xl">🔵</span>
+            <span class="text-[11px] font-black text-cyan-300">3-маяк</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4-КЕЗЕҢ: Алып «Шаңырақ» ғарыш станциясына жету және Жеңіс -->
+    <section id="stage4" class="w-full hidden flex-col items-center text-center">
+      <div class="w-full max-w-xl bg-gradient-to-b from-slate-900 via-indigo-950 to-sky-950 border-4 border-amber-400 rounded-3xl p-4 sm:p-6 shadow-game flex flex-col items-center relative overflow-hidden">
+        
+        <!-- Салтанатты алып «Шаңырақ» ғарыштық станциясы (SVG) -->
+        <div class="w-64 sm:w-80 h-44 sm:h-52 relative my-1">
+          <svg viewBox="0 0 280 180" class="w-full h-full drop-shadow-xl">
+            <!-- Background space nebula glow -->
+            <ellipse cx="140" cy="90" rx="130" ry="75" fill="#1e1b4b" opacity="0.6"/>
+            <!-- Solar wings of Station -->
+            <rect x="15" y="75" width="55" height="30" rx="3" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+            <line x1="15" y1="90" x2="70" y2="90" stroke="#38bdf8" stroke-width="2"/>
+            <rect x="210" y="75" width="55" height="30" rx="3" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+            <line x1="210" y1="90" x2="265" y2="90" stroke="#38bdf8" stroke-width="2"/>
+
+            <!-- Connecting tunnels -->
+            <rect x="70" y="85" width="30" height="10" fill="#94a3b8"/>
+            <rect x="180" y="85" width="30" height="10" fill="#94a3b8"/>
+
+            <!-- Central Massive Shanyraq Ring (Futuristic Station Core) -->
+            <g class="animate-shanyraq" style="transform-origin: 140px 90px;">
+              <!-- Outer Golden Ring -->
+              <circle cx="140" cy="90" r="45" fill="none" stroke="#f59e0b" stroke-width="6"/>
+              <circle cx="140" cy="90" r="41" fill="none" stroke="#fef08a" stroke-width="1.5"/>
+              <!-- Shanyraq Crossbeams (Күлдіреуіш) -->
+              <path d="M102 75 Q140 85 178 75" fill="none" stroke="#f59e0b" stroke-width="3"/>
+              <path d="M102 105 Q140 95 178 105" fill="none" stroke="#f59e0b" stroke-width="3"/>
+              <path d="M125 52 Q135 90 125 128" fill="none" stroke="#f59e0b" stroke-width="3"/>
+              <path d="M155 52 Q145 90 155 128" fill="none" stroke="#f59e0b" stroke-width="3"/>
+            </g>
+
+            <!-- Station Central Hub (Static) -->
+            <circle cx="140" cy="90" r="18" fill="#e0f2fe" stroke="#0284c7" stroke-width="3"/>
+            <circle cx="140" cy="90" r="10" fill="#38bdf8"/>
+            <circle cx="140" cy="90" r="4" fill="#ffffff" class="animate-twinkle"/>
+
+            <!-- Small Flying Robot Tuyme celebrating -->
+            <g class="animate-cosmic" style="transform-origin: 65px 45px;">
+              <rect x="55" y="35" width="20" height="18" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+              <rect x="58" y="38" width="14" height="9" rx="3" fill="#0f172a"/>
+              <circle cx="62" cy="42" r="1.8" fill="#38bdf8"/>
+              <circle cx="68" cy="42" r="1.8" fill="#38bdf8"/>
+              <circle cx="65" cy="49" r="2.2" fill="#ef4444"/>
+            </g>
+
+            <!-- Small Flying Arman in helmet celebrating -->
+            <g class="animate-cosmic" style="transform-origin: 215px 45px; animation-delay: 0.8s;">
+              <circle cx="215" cy="42" r="12" fill="#93c5fd" stroke="#ffffff" stroke-width="2"/>
+              <circle cx="215" cy="42" r="7" fill="#fed7aa"/>
+              <circle cx="213" cy="41" r="1.2" fill="#1e293b"/>
+              <circle cx="217" cy="41" r="1.2" fill="#1e293b"/>
+              <path d="M213 45 Q215 47 217 45" fill="none" stroke="#451a03" stroke-width="1"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="text-2xl sm:text-3xl font-black text-yellow-400 mb-1">
+          🌟 БІЛІМ МЕН ДОСТЫҚ ШЫҢЫ! 🌟
+        </div>
+        <div class="text-base sm:text-xl font-black text-cyan-300 mb-2">
+          «Ғарыштағы алып „Шаңырақ“ станциясы қарсы алды!» 🚀
+        </div>
+
+        <p class="text-xs sm:text-sm text-cyan-100 font-bold max-w-md mb-4 leading-relaxed bg-slate-900/80 p-2.5 rounded-2xl border border-cyan-500">
+          Арман мен ақылды робот Түйме көгілдір Жерді көріп, спутник жолымен алып «Шаңырақ» станциясына аман-есен жетті! Достар бірге болса, ғарыштың кез келген шыңы бағындырылады!
+        </p>
+
+        <!-- Қайта ойнау батырмасы -->
+        <button onclick="restartGame()" class="bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-black text-lg sm:text-2xl px-6 sm:px-8 py-3 rounded-3xl border-4 border-cyan-300 shadow-game shadow-game-press flex items-center gap-2">
+          <span>🔄</span>
+          <span>Басынан қайта ұшу!</span>
+        </button>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="w-full relative pointer-events-none z-0">
+    <div class="w-full h-12 sm:h-14 bg-gradient-to-t from-slate-950 to-indigo-950 border-t-2 border-cyan-800 rounded-t-3xl relative overflow-hidden flex items-end justify-around px-4 pb-1">
+      <span class="text-2xl animate-cosmic">🚀</span>
+      <span class="text-2xl animate-bounce">🪐</span>
+      <span class="text-3xl animate-twinkle">🌟</span>
+      <span class="text-2xl animate-bounce">🛰️</span>
+      <span class="text-2xl animate-cosmic">🤖</span>
+    </div>
+  </footer>
+
+  <!-- Тез хабарлама терезесі (Alert мүлдем қолданылмайды) -->
+  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 bg-cyan-600 text-white font-black text-xs sm:text-base px-5 py-2 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2 border-2 border-cyan-300">
+    <span id="toastIcon">⭐</span>
+    <span id="toastText">Керемет!</span>
+  </div>
+
+  <!-- Өз аудио жазбаңызды ойнататын тег (Сөйлейтін ботсыз) -->
+  <audio id="customAudioTag" preload="auto"></audio>
+
+  <script>
+    // СӨЙЛЕЙТІН БОТ ҚОСЫЛМАҒАН!
+    // Тек Web Audio API арқылы ғарыштық нәзік сиқырлы дыбыстар (сигнал, бип, варп әуені)
+    let audioCtx = null;
+    let isMuted = false;
+
+    /*
+     * МҰНДА ӨЗІҢІЗДІҢ ДАУЫСТЫҚ ФАЙЛДАРЫҢЫЗДЫҢ СІЛТЕМЕСІН ЖАЗА АЛАСЫЗ:
+     * 1: "audio/1_arman_tuyme.mp3",
+     * 2: "audio/2_earth_marzhan.mp3",
+     * 3: "audio/3_sputnik_joly.mp3",
+     * 4: "audio/4_shanyraq_station.mp3"
+     */
+    const customRecordings = {
+      1: "", // 1-тапсырма: Арман мен Түйме (жұлдыздар сыры)
+      2: "", // 2-тапсырма: Көгілдір Жерге қарау
+      3: "", // 3-тапсырма: Спутник қауіпсіз жолы
+      4: ""  // 4-тапсырма: «Шаңырақ» станциясы мен Жеңіс
+    };
+
+    const customAudioElement = document.getElementById('customAudioTag');
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Дыбыстық әсерлер: ғарыштық сигналдар, биптер, варп сыңғыры
+    function playSfx(type) {
+      if (isMuted) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'tap') {
+          // Futuristic bleep
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === 'star') {
+          // High crystal twinkle
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(659.25, now);
+          osc.frequency.setValueAtTime(880, now + 0.08);
+          osc.frequency.setValueAtTime(1174.66, now + 0.16);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else if (type === 'warp') {
+          // Smooth cosmic sweep
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.25);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'success') {
+          // Triumphant space chord
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = 'triangle';
+            o.frequency.value = freq;
+            o.connect(g);
+            g.connect(ctx.destination);
+            const t = now + idx * 0.08;
+            g.gain.setValueAtTime(0.25, t);
+            g.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+            o.start(t);
+            o.stop(t + 0.4);
+          });
+        }
+      } catch (err) {
+        console.warn('Audio API:', err);
+      }
+    }
+
+    function playCustomVoice() {
+      if (isMuted) return;
+      const src = customRecordings[state.stage];
+      if (src && src.trim() !== '') {
+        try {
+          customAudioElement.src = src;
+          customAudioElement.play();
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        playSfx('tap');
+        showToast("Өз аудиоңызды қосу үшін файл атауын жазыңыз 🎵", "🎙️");
+      }
+    }
+
+    function toggleAudio() {
+      isMuted = !isMuted;
+      const icon = document.getElementById('soundIcon');
+      if (isMuted) {
+        icon.innerText = '🔕';
+        if (!customAudioElement.paused) customAudioElement.pause();
+        showToast("Дыбыс өшірілді", "🔇");
+      } else {
+        icon.innerText = '🔔';
+        playSfx('tap');
+        showToast("Дыбыс қосылды", "🔊");
+      }
+    }
+
+    function showToast(msg, icon = '⭐') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastText').innerText = msg;
+      document.getElementById('toastIcon').innerText = icon;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100', '-translate-y-2');
+      setTimeout(() => {
+        toast.classList.add('opacity-0');
+        toast.classList.remove('opacity-100', '-translate-y-2');
+      }, 1600);
+    }
+
+    const state = {
+      stage: 1,
+      // Stage 1
+      starsCaught: 0,
+      starSpots: { 1: false, 2: false, 3: false },
+      // Stage 2
+      isEarthInspected: false,
+      // Stage 3
+      beaconsActivated: 0,
+      beaconSpots: { 1: false, 2: false, 3: false }
+    };
+
+    function updateStars() {
+      for (let i = 1; i <= 4; i++) {
+        const s = document.getElementById(`star${i}`);
+        if (state.stage >= i) {
+          s.classList.remove('grayscale');
+          s.classList.add('scale-110');
+        } else {
+          s.classList.add('grayscale');
+          s.classList.remove('scale-110');
+        }
+      }
+    }
+
+    /* ---- 1-КЕЗЕҢ: Жұлдыздар сыры және Түйме ---- */
+    function initStage1() {
+      state.starsCaught = 0;
+      state.starSpots = { 1: false, 2: false, 3: false };
+      document.getElementById('starCatchCount').innerText = '0';
+      document.getElementById('bannerIcon').innerText = '🤖';
+      document.getElementById('taskInstruction').innerHTML = 'Жарқыраған жұлдыздарды басып, робот Түймені қондыр! ✨';
+
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`skyStar${i}`);
+        btn.classList.remove('opacity-30', 'pointer-events-none');
+      }
+    }
+
+    function tapTuyme() {
+      playSfx('warp');
+      const bot = document.getElementById('tuymeBot');
+      bot.classList.add('scale-125');
+      setTimeout(() => bot.classList.remove('scale-125'), 300);
+      showToast("«Сәлем! Мен барлық ғаламшарды білетін Түймемін!» 🤖", "✨");
+    }
+
+    function catchStar(id) {
+      if (state.starSpots[id]) return;
+      state.starSpots[id] = true;
+      state.starsCaught++;
+      document.getElementById('starCatchCount').innerText = state.starsCaught;
+
+      playSfx('star');
+      const btn = document.getElementById(`skyStar${id}`);
+      btn.classList.add('opacity-30', 'pointer-events-none');
+
+      showToast(`${id}-жұлдыз құпиясы ашылды! 🌟`, "⭐");
+
+      if (state.starsCaught >= 3) {
+        setTimeout(() => {
+          playSfx('success');
+          showToast("«Кеттік, Арман! Ғарыш сырларын бірге көрейік!» 🚀", "🎉");
+          setTimeout(() => goToStage(2), 1400);
+        }, 600);
+      }
+    }
+
+    /* ---- 2-КЕЗЕҢ: Көгілдір Жерге қарау ---- */
+    function initStage2() {
+      state.isEarthInspected = false;
+      document.getElementById('bannerIcon').innerText = '🌍';
+      document.getElementById('taskInstruction').innerHTML = '«Қарашы, біздің Жер көгілдір маржан сияқты!» Батырманы бас! 🔭';
+      
+      const earth = document.getElementById('earthGlobe');
+      earth.classList.remove('scale-125');
+    }
+
+    function inspectEarth() {
+      if (state.isEarthInspected) return;
+      state.isEarthInspected = true;
+      playSfx('warp');
+
+      const earth = document.getElementById('earthGlobe');
+      earth.classList.add('scale-125', 'transition-transform', 'duration-700');
+
+      showToast("Көгілдір маржан Жер жарқырады! 🌍✨", "💎");
+
+      setTimeout(() => {
+        playSfx('success');
+        showToast("«Спутник жұлдызды қауіпсіз жолды көрсетті!» 🛰️", "🌟");
+        setTimeout(() => goToStage(3), 1400);
+      }, 800);
+    }
+
+    /* ---- 3-КЕЗЕҢ: Спутник маяктарын іске қосу ---- */
+    function initStage3() {
+      state.beaconsActivated = 0;
+      state.beaconSpots = { 1: false, 2: false, 3: false };
+      document.getElementById('pathCount').innerText = '0';
+      document.getElementById('bannerIcon').innerText = '🛰️';
+      document.getElementById('taskInstruction').innerHTML = 'Маяктарды басып, қауіпсіз жұлдызды жолды қос! 💡';
+
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`beacon${i}`);
+        if (btn) {
+          btn.classList.remove('opacity-30', 'pointer-events-none');
+        }
+      }
+    }
+
+    function activateBeacon(id, name) {
+      if (state.beaconSpots[id]) return;
+      state.beaconSpots[id] = true;
+      state.beaconsActivated++;
+      document.getElementById('pathCount').innerText = state.beaconsActivated;
+
+      playSfx('tap');
+      const btn = document.getElementById(`beacon${id}`);
+      if (btn) {
+        btn.classList.add('opacity-30', 'pointer-events-none');
+      }
+
+      // Satellite bounce
+      const sat = document.getElementById('satelliteEl');
+      sat.classList.add('scale-110');
+      setTimeout(() => sat.classList.remove('scale-110'), 250);
+
+      showToast(`${name} іске қосылды! 🛰️`, "✨");
+
+      if (state.beaconsActivated >= 3) {
+        setTimeout(() => {
+          playSfx('success');
+          showToast("«Ғарыштағы алып „Шаңырақ“ станциясы ашылды!» 🪐", "🎉");
+          setTimeout(() => goToStage(4), 1400);
+        }, 600);
+      }
+    }
+
+    /* ---- 4-КЕЗЕҢ: «Шаңырақ» станциясы мен Жеңіс мерекесі ---- */
+    function initStage4() {
+      document.getElementById('bannerIcon').innerText = '🎊';
+      document.getElementById('taskInstruction').innerHTML = '«Білім мен достық — кез келген биік шыңды бағындырады!» 🌟';
+      startConfetti();
+    }
+
+    function goToStage(num) {
+      state.stage = num;
+      updateStars();
+
+      document.getElementById('stage1').classList.add('hidden');
+      document.getElementById('stage2').classList.add('hidden');
+      document.getElementById('stage3').classList.add('hidden');
+      document.getElementById('stage4').classList.add('hidden');
+
+      if (num === 1) {
+        document.getElementById('stage1').classList.remove('hidden');
+        initStage1();
+      } else if (num === 2) {
+        document.getElementById('stage2').classList.remove('hidden');
+        document.getElementById('stage2').classList.add('flex');
+        initStage2();
+      } else if (num === 3) {
+        document.getElementById('stage3').classList.remove('hidden');
+        document.getElementById('stage3').classList.add('flex');
+        initStage3();
+      } else if (num === 4) {
+        document.getElementById('stage4').classList.remove('hidden');
+        document.getElementById('stage4').classList.add('flex');
+        initStage4();
+      }
+    }
+
+    function restartGame() {
+      playSfx('tap');
+      stopConfetti();
+      goToStage(1);
+    }
+
+    let confettiTimer = null;
+    const colors = ['#38bdf8', '#facc15', '#a855f7', '#ec4899', '#34d399', '#f97316'];
+    let particles = [];
+
+    function startConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      particles = [];
+      for (let i = 0; i < 85; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * -canvas.height,
+          size: Math.random() * 8 + 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 3,
+          vy: Math.random() * 3 + 2.5,
+          rot: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 8
+        });
+      }
+
+      function renderConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vRot;
+          if (p.y > canvas.height) {
+            p.y = -10;
+            p.x = Math.random() * canvas.width;
+          }
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+          ctx.restore();
+        });
+        confettiTimer = requestAnimationFrame(renderConfetti);
+      }
+      renderConfetti();
+    }
+
+    function stopConfetti() {
+      if (confettiTimer) cancelAnimationFrame(confettiTimer);
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    window.addEventListener('resize', () => {
+      const canvas = document.getElementById('confettiCanvas');
+      if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+
+    window.onload = function() {
+      initStage1();
+    };
+  </script>
+</body>
+</html>

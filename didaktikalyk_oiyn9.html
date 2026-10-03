@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Кішкентай құсбегі Айғаным және Ақиық</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Nunito:wght@700;800;900;1000&display=swap&subset=cyrillic,cyrillic-ext" rel="stylesheet">
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    body {
+      font-family: 'Nunito', 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+      background: radial-gradient(circle at top, #064e3b 0%, #065f46 45%, #022c22 100%);
+    }
+
+    @keyframes eagleFlap {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-12px) rotate(4deg); }
+    }
+    @keyframes gemPulse {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px #10b981); }
+      50% { transform: scale(1.15); filter: drop-shadow(0 0 20px #34d399); }
+    }
+    @keyframes fireFlicker {
+      0%, 100% { transform: scale(1) rotate(-2deg); }
+      50% { transform: scale(1.12) rotate(3deg); }
+    }
+    @keyframes flowerBloom {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes waterStream {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 36; }
+    }
+
+    .animate-eagle { animation: eagleFlap 2.2s ease-in-out infinite; }
+    .animate-gem { animation: gemPulse 2s ease-in-out infinite; }
+    .animate-fire { animation: fireFlicker 0.9s ease-in-out infinite; }
+    .bloom-flower { animation: flowerBloom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    .water-flow { stroke-dasharray: 8 6; animation: waterStream 1.6s linear infinite; }
+
+    .shadow-game {
+      box-shadow: 0 8px 0px rgba(0, 0, 0, 0.4);
+    }
+    .shadow-game-press:active {
+      transform: translateY(4px);
+      box-shadow: 0 4px 0px rgba(0, 0, 0, 0.4);
+    }
+
+    #confettiCanvas {
+      pointer-events: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 60;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none relative text-white">
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- Басқару тақтасы және 4 кезең көрсеткіші -->
+  <header class="w-full px-4 pt-3 pb-2 z-20 flex justify-between items-center max-w-4xl mx-auto">
+    <!-- Дыбыс қосқыш (Сөйлейтін ботсыз: табиғи сылдыр, сыңғыр, қыран қанаты мен күй) -->
+    <button onclick="toggleAudio()" class="bg-emerald-700 hover:bg-emerald-600 border-4 border-emerald-300 rounded-2xl px-3 py-2 shadow-game shadow-game-press flex items-center gap-2">
+      <span id="soundIcon" class="text-2xl">🔔</span>
+      <span class="font-black text-white text-xs sm:text-sm">Дыбыс</span>
+    </button>
+
+    <!-- 4 деңгей белгісі (5-6 жастағы балаларға көрнекі белгілер) -->
+    <div class="flex items-center bg-stone-900/90 backdrop-blur px-3 sm:px-4 py-1.5 rounded-full border-4 border-emerald-400 shadow-game">
+      <div id="step1" class="text-2xl filter grayscale transition-all duration-300" title="1-кезең: Мөлдір бұлақты тазарту">💧</div>
+      <div class="w-2 sm:w-3 h-1 bg-stone-700 mx-1 rounded"></div>
+      <div id="step2" class="text-2xl filter grayscale transition-all duration-300" title="2-кезең: Изумруд тас пен қызғалдақтар">💎</div>
+      <div class="w-2 sm:w-3 h-1 bg-stone-700 mx-1 rounded"></div>
+      <div id="step3" class="text-2xl filter grayscale transition-all duration-300" title="3-кезең: Орманды өрттен сақтау">🔥</div>
+      <div class="w-2 sm:w-3 h-1 bg-stone-700 mx-1 rounded"></div>
+      <div id="step4" class="text-2xl filter grayscale transition-all duration-300" title="4-кезең: Бірлік пен еңбек — Мереке">🎉</div>
+    </div>
+
+    <!-- Тәрбиеші немесе ата-ананың өз даусын тыңдау батырмасы -->
+    <button id="voiceBtn" onclick="playCustomVoice()" class="bg-amber-600 hover:bg-amber-500 border-4 border-amber-300 rounded-2xl px-3 py-2 shadow-game shadow-game-press flex items-center gap-1.5" title="Өз аудиоңызды тыңдау">
+      <span class="text-2xl">🎧</span>
+      <span class="font-black text-amber-950 text-xs hidden sm:inline">Тыңдау</span>
+    </button>
+  </header>
+
+  <main class="w-full flex-1 max-w-4xl mx-auto px-3 py-2 flex flex-col justify-center items-center relative z-10">
+
+    <!-- Көрнекі тапсырма баннері (Балаларға оқусыз түсінікті) -->
+    <div class="w-full max-w-2xl bg-stone-900/95 border-4 border-emerald-400 rounded-3xl p-3 sm:p-4 mb-3 shadow-game text-center flex items-center justify-center gap-3">
+      <div id="bannerIcon" class="text-3xl shrink-0 animate-bounce">🦅</div>
+      <div id="taskInstruction" class="text-base sm:text-2xl font-black text-emerald-200 leading-snug">
+        Кішкентай құсбегі Айғаным мен Ақиық қыран табиғатты қорғайды! 🌿✨
+      </div>
+    </div>
+
+    <!-- 1-КЕЗЕҢ: Мөлдір бұлақтың арнасын қоқыстан тазарту -->
+    <section id="stage1" class="w-full flex flex-col items-center">
+      <div class="w-full max-w-xl bg-gradient-to-b from-stone-900 via-teal-950 to-stone-950 border-4 border-teal-400 rounded-3xl p-4 sm:p-5 shadow-game flex flex-col items-center relative overflow-hidden min-h-[380px] justify-between">
+        
+        <div class="w-full flex justify-between items-center text-xs sm:text-sm font-black text-teal-200 bg-stone-950/90 px-3 py-1 rounded-full border border-teal-400">
+          <span>💧 Мөлдір бұлақ</span>
+          <span class="text-emerald-300">«Табиғаттың тынысын ашайық!» 🌿</span>
+          <span>Тазартылды: <span id="trashCount" class="text-amber-300 font-black">0</span>/3</span>
+        </div>
+
+        <!-- Ортада: Айғаным мен Ақиық және бітелген бұлақ көрінісі (SVG) -->
+        <div class="w-full flex justify-around items-center my-2 relative">
+          
+          <!-- Айғаным және қолындағы Ақиық қыран (SVG) -->
+          <div class="w-32 h-44 sm:w-40 sm:h-52 relative animate-eagle cursor-pointer" onclick="tapHero()">
+            <svg viewBox="0 0 160 190" class="w-full h-full drop-shadow-xl">
+              <!-- Ayganim Body / Kazakh Girl Falconer -->
+              <!-- Dress / Vest -->
+              <ellipse cx="70" cy="140" rx="28" ry="34" fill="#047857" stroke="#064e3b" stroke-width="2.5"/>
+              <path d="M58 105 L70 140 L82 105 Z" fill="#ecfdf5"/>
+              <path d="M52 115 Q70 130 88 115" fill="none" stroke="#facc15" stroke-width="2.5"/>
+              <!-- Boots -->
+              <rect x="58" y="172" width="10" height="14" rx="4" fill="#78350f"/>
+              <rect x="74" y="172" width="10" height="14" rx="4" fill="#78350f"/>
+
+              <!-- Face & Taqiya with owl feather (Үкілі тақия) -->
+              <circle cx="70" cy="75" r="21" fill="#fed7aa"/>
+              <!-- Hair Braids (Қос бұрым) -->
+              <path d="M48 80 Q42 105 46 130" stroke="#1c1917" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M78 80 Q84 105 82 130" stroke="#1c1917" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <!-- Bangs -->
+              <path d="M49 68 Q70 54 91 68 Q70 60 49 68 Z" fill="#1c1917"/>
+
+              <!-- Taqiya with feather -->
+              <ellipse cx="70" cy="56" rx="19" ry="8" fill="#0284c7" stroke="#0369a1" stroke-width="2"/>
+              <circle cx="70" cy="56" r="3.5" fill="#facc15"/>
+              <path d="M70 47 Q64 30 68 22 Q73 34 70 47" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+
+              <!-- Eyes & Smile -->
+              <circle cx="63" cy="74" r="2.2" fill="#1c1917"/>
+              <circle cx="77" cy="74" r="2.2" fill="#1c1917"/>
+              <path d="M66 84 Q70 88 74 84" fill="none" stroke="#be123c" stroke-width="2" stroke-linecap="round"/>
+
+              <!-- Falconer Leather Glove (Биялай) on Right Arm -->
+              <path d="M84 110 L108 95 L116 102 L92 120 Z" fill="#92400e" stroke="#78350f" stroke-width="2"/>
+
+              <!-- Aqiyq Golden Eagle sitting proudly on glove -->
+              <g transform="translate(108, 62)">
+                <!-- Eagle body -->
+                <ellipse cx="12" cy="24" rx="11" ry="16" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+                <!-- White shoulder patch (Ақиық) -->
+                <path d="M4 14 Q12 10 18 16 Q10 24 4 14 Z" fill="#f8fafc"/>
+                <!-- Head -->
+                <circle cx="12" cy="8" r="8" fill="#92400e"/>
+                <!-- Golden crown feathers -->
+                <path d="M8 2 L12 -2 L16 2" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                <!-- Sharp curved beak -->
+                <path d="M19 8 Q26 10 21 15 L19 11 Z" fill="#facc15" stroke="#d97706" stroke-width="1"/>
+                <circle cx="15" cy="6" r="1.5" fill="#000000"/>
+                <!-- Talons holding glove -->
+                <line x1="6" y1="39" x2="6" y2="44" stroke="#facc15" stroke-width="2"/>
+                <line x1="14" y1="39" x2="14" y2="44" stroke="#facc15" stroke-width="2"/>
+              </g>
+            </svg>
+            <div class="text-[10px] text-center font-black text-teal-200 bg-stone-900/90 rounded-full px-2 py-0.5 border border-teal-400 mt-1">
+              🦅 Айғаным мен Ақиық
+            </div>
+          </div>
+
+          <!-- Мөлдір бұлақ және оны бітеп тұрған 3 кедергі (SVG) -->
+          <div class="flex flex-col items-center">
+            <div class="w-44 h-44 sm:w-48 sm:h-48 relative bg-stone-900 rounded-2xl border-4 border-teal-400 p-1 overflow-hidden flex items-center justify-center">
+              <svg viewBox="0 0 160 160" class="w-full h-full">
+                <!-- Banks -->
+                <rect x="0" y="0" width="160" height="160" fill="#065f46"/>
+                <!-- Riverbed -->
+                <path d="M30 0 Q60 50 35 100 Q15 130 50 160 L110 160 Q80 120 120 70 Q140 30 110 0 Z" fill="#0284c7"/>
+                
+                <!-- Water flow waves -->
+                <path id="waterWaves" d="M45 20 Q75 60 55 100 T70 145" fill="none" stroke="#7dd3fc" stroke-width="3" class="water-flow opacity-40"/>
+
+                <!-- Spring Source Sparkles (hidden initially, unlocked after cleaning) -->
+                <g id="springSparkles" class="opacity-0 transition-opacity duration-700">
+                  <circle cx="85" cy="45" r="3" fill="#bae6fd" class="animate-ping"/>
+                  <circle cx="65" cy="85" r="4" fill="#ffffff" class="animate-pulse"/>
+                  <circle cx="95" cy="115" r="3.5" fill="#7dd3fc" class="animate-bounce"/>
+                  <text x="60" y="30" font-size="14" fill="#38bdf8">✨</text>
+                  <text x="75" y="130" font-size="14" fill="#38bdf8">✨</text>
+                </g>
+
+                <!-- 3 Obstructing Trash Items to Tap / Clean -->
+                <!-- 1. Broken dry branch (Сынған бұтақ) -->
+                <g id="trash1" class="cursor-pointer transition-all duration-300" onclick="cleanTrash(1)">
+                  <line x1="45" y1="40" x2="85" y2="55" stroke="#78350f" stroke-width="7" stroke-linecap="round"/>
+                  <line x1="60" y1="46" x2="70" y2="35" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>
+                  <circle cx="65" cy="47" r="10" fill="#ef4444" opacity="0.25" class="animate-pulse"/>
+                  <text x="56" y="52" font-size="12" fill="#fef08a" font-weight="bold">🪵</text>
+                </g>
+
+                <!-- 2. Heavy blocking stone (Ауыр тас) -->
+                <g id="trash2" class="cursor-pointer transition-all duration-300" onclick="cleanTrash(2)">
+                  <ellipse cx="78" cy="88" rx="18" ry="12" fill="#57534e" stroke="#292524" stroke-width="2"/>
+                  <ellipse cx="74" cy="85" rx="7" ry="4" fill="#78716c"/>
+                  <circle cx="78" cy="88" r="12" fill="#ef4444" opacity="0.25" class="animate-pulse"/>
+                  <text x="71" y="93" font-size="12" fill="#fef08a" font-weight="bold">🪨</text>
+                </g>
+
+                <!-- 3. Cluttered waste (Байланған қоқыс) -->
+                <g id="trash3" class="cursor-pointer transition-all duration-300" onclick="cleanTrash(3)">
+                  <rect x="52" y="115" width="26" height="18" rx="6" fill="#a16207" stroke="#713f12" stroke-width="2"/>
+                  <circle cx="65" cy="124" r="11" fill="#ef4444" opacity="0.25" class="animate-pulse"/>
+                  <text x="58" y="129" font-size="12" fill="#fef08a" font-weight="bold">📦</text>
+                </g>
+              </svg>
+            </div>
+            <div id="springStatus" class="text-[11px] font-black text-teal-200 bg-stone-900/90 rounded-full px-2.5 py-0.5 border border-teal-400 mt-1.5 text-center">
+              👆 Бұлақтағы кедергілерді бас!
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Балаларға оңай басу батырмалары -->
+        <div class="w-full grid grid-cols-3 gap-2 mt-1">
+          <button id="btnTrash1" onclick="cleanTrash(1)" class="bg-amber-700 hover:bg-amber-600 border-4 border-amber-300 rounded-2xl py-2 px-1 shadow-game shadow-game-press flex flex-col items-center justify-center">
+            <span class="text-2xl animate-bounce">🪵</span>
+            <span class="text-[11px] sm:text-xs font-black text-amber-100 bg-amber-950 rounded-full px-2 py-0.5 mt-0.5">Бұтақты ал</span>
+          </button>
+          
+          <button id="btnTrash2" onclick="cleanTrash(2)" class="bg-stone-600 hover:bg-stone-500 border-4 border-stone-300 rounded-2xl py-2 px-1 shadow-game shadow-game-press flex flex-col items-center justify-center">
+            <span class="text-2xl animate-pulse">🪨</span>
+            <span class="text-[11px] sm:text-xs font-black text-stone-100 bg-stone-950 rounded-full px-2 py-0.5 mt-0.5">Тасты қозғалт</span>
+          </button>
+
+          <button id="btnTrash3" onclick="cleanTrash(3)" class="bg-teal-600 hover:bg-teal-500 border-4 border-teal-300 rounded-2xl py-2 px-1 shadow-game shadow-game-press flex flex-col items-center justify-center">
+            <span class="text-2xl animate-bounce">📦</span>
+            <span class="text-[11px] sm:text-xs font-black text-teal-100 bg-teal-950 rounded-full px-2 py-0.5 mt-0.5">Қоқысты тазала</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2-КЕЗЕҢ: Сиқырлы Изумруд тас пен құлпырған тау қызғалдақтары -->
+    <section id="stage2" class="w-full hidden flex-col items-center">
+      <div class="w-full max-w-xl bg-gradient-to-b from-stone-900 via-emerald-950 to-stone-950 border-4 border-emerald-400 rounded-3xl p-4 sm:p-5 shadow-game flex flex-col items-center relative overflow-hidden min-h-[380px] justify-between">
+        
+        <div class="w-full flex justify-between items-center text-xs sm:text-sm font-black text-emerald-200 bg-stone-950/90 px-3 py-1 rounded-full border border-emerald-400">
+          <span>💎 Сиқырлы Изумруд</span>
+          <span class="text-teal-300">«Құстардың тілі мен гүлдер» 🌷</span>
+          <span>Қызғалдақ: <span id="tulipCount" class="text-emerald-300 font-black">0</span>/3</span>
+        </div>
+
+        <!-- Ортада: Жарқыраған Изумруд тас және 3 тау қызғалдағы (SVG) -->
+        <div class="relative my-2 w-full max-w-md h-48 sm:h-52 flex flex-col items-center justify-center">
+          
+          <svg viewBox="0 0 260 150" class="w-full h-full drop-shadow-lg">
+            <!-- Mountain Green Meadow Slope -->
+            <path d="M0 150 L0 80 Q70 60 130 75 T260 65 L260 150 Z" fill="#047857"/>
+            <path d="M0 150 L0 105 Q90 90 170 100 T260 95 L260 150 Z" fill="#065f46"/>
+
+            <!-- Central Shining Emerald Stone (Сиқырлы Изумруд тас) -->
+            <g id="emeraldGem" class="animate-gem cursor-pointer" onclick="tapEmerald()" transform="translate(130, 42)">
+              <!-- Hexagonal gem -->
+              <polygon points="0,-18 16,-8 16,12 0,22 -16,12 -16,-8" fill="#10b981" stroke="#34d399" stroke-width="2.5"/>
+              <polygon points="0,-18 16,-8 0,0 -16,-8" fill="#6ee7b7" opacity="0.6"/>
+              <polygon points="16,-8 16,12 0,0" fill="#059669" opacity="0.7"/>
+              <polygon points="-16,-8 -16,12 0,0" fill="#047857" opacity="0.5"/>
+              <!-- Light sparkles -->
+              <circle cx="-5" cy="-7" r="2.5" fill="#ffffff"/>
+              <circle cx="0" cy="0" r="26" fill="none" stroke="#6ee7b7" stroke-width="1.5" stroke-dasharray="4,4"/>
+            </g>
+
+            <!-- Singing Little Birds awakened by emerald (Әнші құстар) -->
+            <g transform="translate(40, 25)" class="animate-bounce">
+              <ellipse cx="8" cy="8" rx="7" ry="5" fill="#38bdf8"/>
+              <polygon points="13,7 18,5 13,9" fill="#f59e0b"/>
+              <text x="14" y="-2" font-size="11" fill="#facc15">🎶</text>
+            </g>
+            <g transform="translate(200, 20)" class="animate-bounce" style="animation-delay: 0.5s;">
+              <ellipse cx="8" cy="8" rx="7" ry="5" fill="#f43f5e"/>
+              <polygon points="13,7 18,5 13,9" fill="#f59e0b"/>
+              <text x="14" y="-2" font-size="11" fill="#facc15">🎵</text>
+            </g>
+
+            <!-- 3 Red Mountain Tulips (Тау қызғалдақтары) -->
+            <!-- Tulip 1 -->
+            <g id="tulip1" class="cursor-pointer opacity-30 transition-all duration-500" onclick="bloomTulip(1)" transform="translate(55, 115)">
+              <line x1="0" y1="0" x2="0" y2="24" stroke="#15803d" stroke-width="3"/>
+              <path d="M0 16 Q8 10 12 12" fill="none" stroke="#15803d" stroke-width="2"/>
+              <!-- Tulip Bud / Petals -->
+              <path d="M-8 0 Q-10 -18 0 -20 Q10 -18 8 0 Z" fill="#e11d48"/>
+              <path d="M-4 -2 Q0 -16 4 -2" fill="#be123c"/>
+              <text x="-14" y="24" font-size="10" fill="#fef08a" font-weight="bold">1-гүл</text>
+            </g>
+
+            <!-- Tulip 2 -->
+            <g id="tulip2" class="cursor-pointer opacity-30 transition-all duration-500" onclick="bloomTulip(2)" transform="translate(130, 120)">
+              <line x1="0" y1="0" x2="0" y2="22" stroke="#15803d" stroke-width="3"/>
+              <path d="M0 14 Q-8 8 -12 10" fill="none" stroke="#15803d" stroke-width="2"/>
+              <path d="M-9 0 Q-11 -20 0 -22 Q11 -20 9 0 Z" fill="#f43f5e"/>
+              <path d="M-5 -2 Q0 -18 5 -2" fill="#e11d48"/>
+              <text x="-14" y="22" font-size="10" fill="#fef08a" font-weight="bold">2-гүл</text>
+            </g>
+
+            <!-- Tulip 3 -->
+            <g id="tulip3" class="cursor-pointer opacity-30 transition-all duration-500" onclick="bloomTulip(3)" transform="translate(205, 112)">
+              <line x1="0" y1="0" x2="0" y2="24" stroke="#15803d" stroke-width="3"/>
+              <path d="M0 16 Q8 10 12 12" fill="none" stroke="#15803d" stroke-width="2"/>
+              <path d="M-8 0 Q-10 -18 0 -20 Q10 -18 8 0 Z" fill="#e11d48"/>
+              <path d="M-4 -2 Q0 -16 4 -2" fill="#be123c"/>
+              <text x="-14" y="24" font-size="10" fill="#fef08a" font-weight="bold">3-гүл</text>
+            </g>
+          </svg>
+
+        </div>
+
+        <div class="text-xs font-black text-emerald-200 bg-stone-900/90 rounded-full px-3 py-1 border border-emerald-400 mt-1">
+          🌷 Қызғалдақтарды басып, құлпыртып гүлдет!
+        </div>
+
+        <!-- Қызғалдақ гүлдету батырмасы -->
+        <button id="tulipBtn" onclick="bloomNextTulip()" class="w-full bg-gradient-to-r from-rose-500 via-emerald-600 to-teal-500 hover:from-rose-400 hover:to-emerald-400 border-4 border-emerald-200 text-stone-950 font-black text-lg sm:text-xl py-3 px-6 rounded-2xl shadow-game shadow-game-press flex items-center justify-center gap-2 mt-2">
+          <span class="text-3xl animate-bounce">🌷</span>
+          <span id="tulipBtnText">Тау қызғалдағын құлпырт! (1/3)</span>
+          <span class="text-2xl">✨</span>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- 3-КЕЗЕҢ: Айғаным мен Ақиық өртті тоқтату жоспарын құрды -->
+    <section id="stage3" class="w-full hidden flex-col items-center">
+      <div class="w-full max-w-xl bg-gradient-to-b from-stone-900 via-orange-950 to-stone-950 border-4 border-amber-400 rounded-3xl p-4 sm:p-5 shadow-game flex flex-col items-center relative min-h-[380px] justify-between overflow-hidden">
+        
+        <div class="w-full flex justify-between items-center bg-stone-950/90 px-3 py-1.5 rounded-2xl border-2 border-amber-400">
+          <div class="flex items-center gap-1.5">
+            <span class="text-2xl animate-pulse">🦅</span>
+            <span class="text-xs sm:text-sm font-black text-amber-200">Өртті тоқтату жоспары:</span>
+          </div>
+          <div class="bg-amber-600 text-stone-950 font-black text-xs sm:text-sm px-2.5 py-0.5 rounded-full">
+            Сөндірілді: <span id="fireCount">0</span>/3
+          </div>
+        </div>
+
+        <!-- Ортада: Қыран көктен сулы бұлтпен ұшады және 3 от ошағы (SVG) -->
+        <div class="relative my-2 w-full max-w-md h-48 sm:h-52 flex items-center justify-center">
+          
+          <svg viewBox="0 0 270 160" class="w-full h-full">
+            <!-- Distant mountain pine trees -->
+            <polygon points="20,130 35,70 50,130" fill="#065f46"/>
+            <polygon points="65,135 80,65 95,135" fill="#047857"/>
+            <polygon points="175,135 190,65 205,135" fill="#047857"/>
+            <polygon points="220,130 235,70 250,130" fill="#065f46"/>
+
+            <!-- Eagle Aqiyq soaring with Rain Cloud across sky -->
+            <g transform="translate(135, 40)" class="animate-eagle">
+              <!-- Rain Cloud over flames -->
+              <ellipse cx="0" cy="-6" rx="28" ry="14" fill="#38bdf8" opacity="0.8"/>
+              <ellipse cx="-12" cy="-10" rx="16" ry="12" fill="#7dd3fc" opacity="0.9"/>
+              <ellipse cx="12" cy="-10" rx="16" ry="12" fill="#bae6fd" opacity="0.9"/>
+              <!-- Rain droplets falling -->
+              <line x1="-10" y1="10" x2="-10" y2="24" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-dasharray="2,3"/>
+              <line x1="0" y1="12" x2="0" y2="28" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2,3"/>
+              <line x1="10" y1="10" x2="10" y2="24" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-dasharray="2,3"/>
+
+              <!-- Flying Eagle Silhouette -->
+              <path d="M-30 -4 Q0 -18 30 -4 Q15 0 0 -2 Q-15 0 -30 -4 Z" fill="#78350f"/>
+              <circle cx="0" cy="-6" r="5" fill="#f8fafc"/>
+              <polygon points="5,-8 10,-6 5,-4" fill="#facc15"/>
+            </g>
+
+            <!-- 3 Fire Flame Hotspots to extinguish -->
+            <!-- Fire 1 -->
+            <g id="fire1" class="cursor-pointer animate-fire" onclick="extinguishFire(1)" transform="translate(55, 125)">
+              <ellipse cx="0" cy="5" rx="16" ry="7" fill="#78350f"/>
+              <path d="M-12 5 Q-16 -24 0 -34 Q16 -24 12 5 Z" fill="#ea580c"/>
+              <path d="M-7 5 Q-10 -16 0 -24 Q10 -16 7 5 Z" fill="#facc15"/>
+              <circle cx="0" cy="-12" r="14" fill="#f97316" opacity="0.25" class="animate-ping"/>
+              <text x="-12" y="20" font-size="10" fill="#fed7aa" font-weight="bold">1-ошақ</text>
+            </g>
+
+            <!-- Fire 2 -->
+            <g id="fire2" class="cursor-pointer animate-fire" onclick="extinguishFire(2)" transform="translate(135, 128)" style="animation-delay: 0.2s;">
+              <ellipse cx="0" cy="5" rx="18" ry="8" fill="#78350f"/>
+              <path d="M-14 5 Q-18 -26 0 -38 Q18 -26 14 5 Z" fill="#dc2626"/>
+              <path d="M-8 5 Q-12 -18 0 -26 Q12 -18 8 5 Z" fill="#fbbf24"/>
+              <circle cx="0" cy="-14" r="16" fill="#ef4444" opacity="0.25" class="animate-ping"/>
+              <text x="-12" y="20" font-size="10" fill="#fed7aa" font-weight="bold">2-ошақ</text>
+            </g>
+
+            <!-- Fire 3 -->
+            <g id="fire3" class="cursor-pointer animate-fire" onclick="extinguishFire(3)" transform="translate(215, 125)" style="animation-delay: 0.4s;">
+              <ellipse cx="0" cy="5" rx="16" ry="7" fill="#78350f"/>
+              <path d="M-12 5 Q-16 -24 0 -34 Q16 -24 12 5 Z" fill="#ea580c"/>
+              <path d="M-7 5 Q-10 -16 0 -24 Q10 -16 7 5 Z" fill="#facc15"/>
+              <circle cx="0" cy="-12" r="14" fill="#f97316" opacity="0.25" class="animate-ping"/>
+              <text x="-12" y="20" font-size="10" fill="#fed7aa" font-weight="bold">3-ошақ</text>
+            </g>
+          </svg>
+
+        </div>
+
+        <div class="text-xs font-black text-amber-200 bg-stone-900/90 rounded-full px-3 py-1 border border-amber-400">
+          🔥 Жалынды басып, көктемгі жаңбырмен сөндір!
+        </div>
+
+        <!-- Өрт сөндіру батырмасы -->
+        <button id="fireBtn" onclick="extinguishNextFire()" class="w-full bg-gradient-to-r from-sky-500 via-teal-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 border-4 border-sky-300 text-stone-950 font-black text-lg sm:text-xl py-3 px-6 rounded-2xl shadow-game shadow-game-press flex items-center justify-center gap-2 mt-2">
+          <span class="text-2xl animate-pulse">💧</span>
+          <span id="fireBtnText">Жалынды сумен сөндір! (1/3)</span>
+          <span class="text-2xl">🌧️</span>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- 4-КЕЗЕҢ: Бірлік пен еңбек орманды аман алып қалды! -->
+    <section id="stage4" class="w-full hidden flex-col items-center text-center">
+      <div class="w-full max-w-xl bg-gradient-to-b from-stone-900 via-emerald-950 to-stone-950 border-4 border-emerald-400 rounded-3xl p-4 sm:p-6 shadow-game flex flex-col items-center relative overflow-hidden">
+        
+        <!-- Салтанатты мереке: Айғаным, Ақиық, жасыл орман мен гүлдер (SVG) -->
+        <div class="w-full max-w-md h-52 sm:h-60 relative my-1">
+          <svg viewBox="0 0 280 180" class="w-full h-full drop-shadow-2xl">
+            <!-- Mountain Range Background -->
+            <polygon points="10,140 60,65 110,140" fill="#047857" opacity="0.6"/>
+            <polygon points="170,140 220,65 270,140" fill="#047857" opacity="0.6"/>
+
+            <!-- Green Meadow with Blooming Tulips -->
+            <ellipse cx="140" cy="165" rx="135" ry="25" fill="#15803d"/>
+            <circle cx="35" cy="160" r="4" fill="#e11d48"/>
+            <circle cx="75" cy="165" r="4" fill="#facc15"/>
+            <circle cx="205" cy="164" r="4" fill="#e11d48"/>
+            <circle cx="245" cy="158" r="4" fill="#38bdf8"/>
+
+            <!-- Pure crystal spring winding through meadow -->
+            <path d="M120 150 Q135 160 150 175" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+
+            <!-- Ayganim standing proudly in center -->
+            <g transform="translate(100, 48)">
+              <!-- Body / Dress -->
+              <ellipse cx="35" cy="80" rx="20" ry="26" fill="#047857" stroke="#064e3b" stroke-width="2"/>
+              <path d="M26 56 L35 80 L44 56 Z" fill="#ecfdf5"/>
+              <circle cx="35" cy="35" r="16" fill="#fed7aa"/>
+              <!-- Taqiya & owl feather -->
+              <ellipse cx="35" cy="22" rx="14" ry="7" fill="#0284c7"/>
+              <path d="M35 15 Q30 2 34 -4 Q38 4 35 15" fill="#ffffff"/>
+              <!-- Face -->
+              <circle cx="30" cy="34" r="1.8" fill="#1c1917"/>
+              <circle cx="40" cy="34" r="1.8" fill="#1c1917"/>
+              <path d="M32 40 Q35 44 38 40" fill="none" stroke="#be123c" stroke-width="1.8" stroke-linecap="round"/>
+              <!-- Braids -->
+              <path d="M20 40 Q16 60 19 80" stroke="#1c1917" stroke-width="3" fill="none"/>
+              <path d="M50 40 Q54 60 51 80" stroke="#1c1917" stroke-width="3" fill="none"/>
+              <!-- Glove on hand holding Emerald -->
+              <line x1="50" y1="65" x2="68" y2="52" stroke="#92400e" stroke-width="4" stroke-linecap="round"/>
+              <polygon points="68,52 74,48 78,54 72,58" fill="#10b981"/>
+              <text x="70" y="44" font-size="14" fill="#34d399" class="animate-bounce">✨</text>
+            </g>
+
+            <!-- Aqiyq Golden Eagle flying happily beside Ayganim -->
+            <g transform="translate(180, 50)" class="animate-eagle">
+              <path d="M-22 0 Q0 -14 22 0 Q10 14 0 10 Q-10 14 -22 0 Z" fill="#78350f"/>
+              <circle cx="0" cy="-2" r="6" fill="#f8fafc"/>
+              <polygon points="4,-4 10,-2 4,0" fill="#facc15"/>
+              <text x="8" y="-10" font-size="12" fill="#facc15">🦅</text>
+            </g>
+
+            <!-- Birds rejoicing in sky -->
+            <g transform="translate(45, 40)" class="animate-bounce">
+              <ellipse cx="6" cy="6" rx="6" ry="4" fill="#38bdf8"/>
+              <polygon points="10,5 15,3 10,7" fill="#f59e0b"/>
+              <text x="12" y="-2" font-size="12" fill="#facc15">🎶</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="text-2xl sm:text-3xl font-black text-amber-300 mb-1">
+          🦅 БІРЛІК ПЕН ЕҢБЕК ОРМАНДЫ АМАН АЛЫП ҚАЛДЫ! 🌿
+        </div>
+        <div class="text-base sm:text-xl font-black text-emerald-300 mb-2">
+          «Табиғатты қорғаған бала — нағыз батыр!» 💎
+        </div>
+
+        <p class="text-xs sm:text-sm text-emerald-100 font-bold max-w-md mb-4 leading-relaxed bg-stone-950/85 p-2.5 rounded-2xl border border-emerald-500">
+          Айғаным мөлдір бұлақты тазартты, сиқырлы Изумруд таспен құстардың тілін түсінді, ал Ақиық қыран екеуі орманды өрттен сақтап қалды!
+        </p>
+
+        <!-- Қайта ойнау батырмасы -->
+        <button onclick="restartGame()" class="bg-gradient-to-r from-emerald-500 via-teal-500 to-amber-400 hover:from-emerald-400 hover:to-amber-300 text-stone-950 font-black text-lg sm:text-2xl px-6 sm:px-8 py-3 rounded-3xl border-4 border-emerald-200 shadow-game shadow-game-press flex items-center gap-2">
+          <span>🔄</span>
+          <span>Басынан қайта ойнау!</span>
+        </button>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="w-full relative pointer-events-none z-0">
+    <div class="w-full h-12 sm:h-14 bg-gradient-to-t from-stone-950 to-stone-900 border-t-2 border-emerald-800 rounded-t-3xl relative overflow-hidden flex items-end justify-around px-4 pb-1">
+      <span class="text-2xl animate-eagle">🦅</span>
+      <span class="text-2xl animate-bounce">💧</span>
+      <span class="text-2xl animate-gem">💎</span>
+      <span class="text-2xl animate-bounce">🌷</span>
+      <span class="text-2xl animate-pulse">🌲</span>
+    </div>
+  </footer>
+
+  <!-- Тез хабарлама терезесі (Alert қолданылмайды) -->
+  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 bg-emerald-600 text-white font-black text-xs sm:text-base px-5 py-2 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2 border-2 border-emerald-300">
+    <span id="toastIcon">🦅</span>
+    <span id="toastText">Керемет!</span>
+  </div>
+
+  <!-- Өз аудио жазбаңызды ойнататын тег (Сөйлейтін ботсыз) -->
+  <audio id="customAudioTag" preload="auto"></audio>
+
+  <script>
+    // СӨЙЛЕЙТІН БОТ ҚОСЫЛМАҒАН!
+    // Тек жағымды табиғи әуендер: қыран даусы, мөлдір бұлақ сылдыры, изумруд сыңғыры, жаңбыр дыбысы және қазақы күй сазы
+    let audioCtx = null;
+    let isMuted = false;
+
+    /*
+     * МҰНДА ӨЗ ДАУЫСТЫҚ ЖАЗБАЛАРЫҢЫЗДЫҢ СІЛТЕМЕСІН ҚОЮҒА БОЛАДЫ:
+     * 1: "audio/1_bulaq_tazartu.mp3",
+     * 2: "audio/2_izumrud_tas.mp3",
+     * 3: "audio/3_ortti_sondiru.mp3",
+     * 4: "audio/4_birlik_pen_enbek.mp3"
+     */
+    const customRecordings = {
+      1: "", // 1-тапсырма: Мөлдір бұлақты тазарту
+      2: "", // 2-тапсырма: Сиқырлы изумруд тас пен қызғалдақтар
+      3: "", // 3-тапсырма: Орманды өрттен сақтау
+      4: ""  // 4-тапсырма: Бірлік пен еңбек — салтанат
+    };
+
+    const customAudioElement = document.getElementById('customAudioTag');
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playSfx(type) {
+      if (isMuted) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'eagle') {
+          // Sharp noble eagle cry / upward high pitch
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(1400, now + 0.15);
+          osc.frequency.exponentialRampToValueAtTime(700, now + 0.35);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'water') {
+          // Pure fresh droplet pop
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(300, now + 0.18);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'gem') {
+          // Emerald chime / magic crystal shimmer
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.3); // D6
+          gain.gain.setValueAtTime(0.28, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else if (type === 'rain') {
+          // Rain splash / hiss
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.exponentialRampToValueAtTime(200, now + 0.25);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'success') {
+          // Pentatonic victory fanfare
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = 'triangle';
+            o.frequency.value = freq;
+            o.connect(g);
+            g.connect(ctx.destination);
+            const t = now + idx * 0.1;
+            g.gain.setValueAtTime(0.25, t);
+            g.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+            o.start(t);
+            o.stop(t + 0.5);
+          });
+        }
+      } catch (err) {
+        console.warn('Audio error:', err);
+      }
+    }
+
+    function playCustomVoice() {
+      if (isMuted) return;
+      const src = customRecordings[state.stage];
+      if (src && src.trim() !== '') {
+        try {
+          customAudioElement.src = src;
+          customAudioElement.play();
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        playSfx('eagle');
+        showToast("Өз аудиоңызды қосу үшін customRecordings бөліміне файл жазыңыз 🦅", "🎙️");
+      }
+    }
+
+    function toggleAudio() {
+      isMuted = !isMuted;
+      const icon = document.getElementById('soundIcon');
+      if (isMuted) {
+        icon.innerText = '🔕';
+        if (!customAudioElement.paused) customAudioElement.pause();
+        showToast("Дыбыс өшірілді", "🔇");
+      } else {
+        icon.innerText = '🔔';
+        playSfx('water');
+        showToast("Дыбыс қосылды", "🔊");
+      }
+    }
+
+    function showToast(msg, icon = '🦅') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastText').innerText = msg;
+      document.getElementById('toastIcon').innerText = icon;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100', '-translate-y-2');
+      setTimeout(() => {
+        toast.classList.add('opacity-0');
+        toast.classList.remove('opacity-100', '-translate-y-2');
+      }, 1600);
+    }
+
+    const state = {
+      stage: 1,
+      // 1-кезең: Бұлақ қоқыстары
+      trashDone: [false, false, false],
+      trashCount: 0,
+      // 2-кезең: Қызғалдақтар
+      tulipsBloomed: [false, false, false],
+      tulipCount: 0,
+      // 3-кезең: Өрт сөндіру
+      fireExtinguished: [false, false, false],
+      fireCount: 0
+    };
+
+    function updateStepIndicator() {
+      for (let i = 1; i <= 4; i++) {
+        const s = document.getElementById(`step${i}`);
+        if (state.stage >= i) {
+          s.classList.remove('grayscale');
+          s.classList.add('scale-110');
+        } else {
+          s.classList.add('grayscale');
+          s.classList.remove('scale-110');
+        }
+      }
+    }
+
+    function initStage1() {
+      state.trashDone = [false, false, false];
+      state.trashCount = 0;
+      document.getElementById('trashCount').innerText = '0';
+      document.getElementById('bannerIcon').innerText = '💧';
+      document.getElementById('taskInstruction').innerHTML = 'Мөлдір бұлақтың арнасын қоқыстан тазартайық! 💧🌿';
+
+      ['btnTrash1', 'btnTrash2', 'btnTrash3'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.remove('opacity-30', 'pointer-events-none');
+      });
+
+      for (let i = 1; i <= 3; i++) {
+        const el = document.getElementById(`trash${i}`);
+        if (el) el.classList.remove('opacity-0', 'pointer-events-none');
+      }
+
+      document.getElementById('springSparkles').classList.add('opacity-0');
+      document.getElementById('springStatus').innerText = '👆 Бұлақтағы кедергілерді бас!';
+    }
+
+    function tapHero() {
+      playSfx('eagle');
+      showToast("«Табиғаттың тынысын ашайық!» — деді Айғаным 🦅", "✨");
+    }
+
+    function cleanTrash(idx) {
+      if (state.trashDone[idx - 1]) return;
+      state.trashDone[idx - 1] = true;
+      state.trashCount++;
+      document.getElementById('trashCount').innerText = state.trashCount;
+
+      playSfx('water');
+
+      const trashEl = document.getElementById(`trash${idx}`);
+      if (trashEl) trashEl.classList.add('opacity-0', 'pointer-events-none');
+
+      const btn = document.getElementById(`btnTrash${idx}`);
+      if (btn) btn.classList.add('opacity-30', 'pointer-events-none');
+
+      showToast(`Бұлақ арнасы тазарды! (${state.trashCount}/3) 💧`, "💦");
+
+      if (state.trashCount >= 3) {
+        document.getElementById('springSparkles').classList.remove('opacity-0');
+        document.getElementById('springStatus').innerText = '💧 Мөлдір бұлақ сылдырлап жанданды!';
+        setTimeout(() => {
+          playSfx('success');
+          showToast("«Мөлдір бұлақ Айғанымға сиқырлы Изумруд тасты сыйлады!» 💎", "🌟");
+          setTimeout(() => goToStage(2), 1600);
+        }, 600);
+      }
+    }
+
+    function initStage2() {
+      state.tulipsBloomed = [false, false, false];
+      state.tulipCount = 0;
+      document.getElementById('tulipCount').innerText = '0';
+      document.getElementById('bannerIcon').innerText = '💎';
+      document.getElementById('taskInstruction').innerHTML = 'Сиқырлы Изумруд тас пен құлпырған тау қызғалдақтары! 🌷✨';
+
+      for (let i = 1; i <= 3; i++) {
+        const tulip = document.getElementById(`tulip${i}`);
+        if (tulip) {
+          tulip.classList.add('opacity-30');
+          tulip.classList.remove('bloom-flower', 'opacity-100');
+        }
+      }
+      document.getElementById('tulipBtnText').innerText = 'Тау қызғалдағын құлпырт! (1/3)';
+      document.getElementById('tulipBtn').classList.remove('opacity-30', 'pointer-events-none');
+    }
+
+    function tapEmerald() {
+      playSfx('gem');
+      showToast("«Айғаным құстардың тілін түсінетін болды!» 💎", "🎶");
+    }
+
+    function bloomTulip(idx) {
+      if (state.tulipsBloomed[idx - 1]) return;
+      state.tulipsBloomed[idx - 1] = true;
+      state.tulipCount++;
+      document.getElementById('tulipCount').innerText = state.tulipCount;
+
+      playSfx('gem');
+
+      const tulip = document.getElementById(`tulip${idx}`);
+      if (tulip) {
+        tulip.classList.remove('opacity-30');
+        tulip.classList.add('bloom-flower', 'opacity-100');
+      }
+
+      showToast(`Тау қызғалдағы құлпырды! (${state.tulipCount}/3) 🌷`, "✨");
+      document.getElementById('tulipBtnText').innerText = `Келесі қызғалдақты құлпырт! (${state.tulipCount}/3)`;
+
+      if (state.tulipCount >= 3) {
+        document.getElementById('tulipBtn').classList.add('opacity-30', 'pointer-events-none');
+        document.getElementById('tulipBtnText').innerText = 'Барлық қызғалдақтар жайнады! 🌷✨';
+        setTimeout(() => {
+          playSfx('success');
+          showToast("«Айғаным мен Ақиық өртті тоқтату жоспарын құрды!» 🦅🔥", "🚨");
+          setTimeout(() => goToStage(3), 1600);
+        }, 700);
+      }
+    }
+
+    function bloomNextTulip() {
+      for (let i = 0; i < 3; i++) {
+        if (!state.tulipsBloomed[i]) {
+          bloomTulip(i + 1);
+          break;
+        }
+      }
+    }
+
+    function initStage3() {
+      state.fireExtinguished = [false, false, false];
+      state.fireCount = 0;
+      document.getElementById('fireCount').innerText = '0';
+      document.getElementById('bannerIcon').innerText = '🔥';
+      document.getElementById('taskInstruction').innerHTML = 'Ақиық пен Айғаным ормандағы жалынды өшіруде! 🦅💧';
+
+      for (let i = 1; i <= 3; i++) {
+        const fire = document.getElementById(`fire${i}`);
+        if (fire) {
+          fire.classList.remove('opacity-0', 'pointer-events-none');
+          fire.classList.add('animate-fire');
+        }
+      }
+      document.getElementById('fireBtnText').innerText = 'Жалынды сумен сөндір! (1/3)';
+      document.getElementById('fireBtn').classList.remove('opacity-30', 'pointer-events-none');
+    }
+
+    function extinguishFire(idx) {
+      if (state.fireExtinguished[idx - 1]) return;
+      state.fireExtinguished[idx - 1] = true;
+      state.fireCount++;
+      document.getElementById('fireCount').innerText = state.fireCount;
+
+      playSfx('rain');
+
+      const fire = document.getElementById(`fire${idx}`);
+      if (fire) {
+        fire.classList.remove('animate-fire');
+        fire.classList.add('opacity-0', 'pointer-events-none');
+      }
+
+      showToast(`Жалын сөндірілді! (${state.fireCount}/3) 💧`, "🌧️");
+      document.getElementById('fireBtnText').innerText = `Келесі жалынды сөндір! (${state.fireCount}/3)`;
+
+      if (state.fireCount >= 3) {
+        document.getElementById('fireBtn').classList.add('opacity-30', 'pointer-events-none');
+        document.getElementById('fireBtnText').innerText = 'Орман өрті толықтай сөндірілді! 🌿';
+        setTimeout(() => {
+          playSfx('success');
+          showToast("«Бірлік пен еңбек орманды аман алып қалды!» 🦅🎉", "🌟");
+          setTimeout(() => goToStage(4), 1600);
+        }, 700);
+      }
+    }
+
+    function extinguishNextFire() {
+      for (let i = 0; i < 3; i++) {
+        if (!state.fireExtinguished[i]) {
+          extinguishFire(i + 1);
+          break;
+        }
+      }
+    }
+
+    function initStage4() {
+      document.getElementById('bannerIcon').innerText = '🎉';
+      document.getElementById('taskInstruction').innerHTML = '«Бірлік пен еңбек орманды аман алып қалды!» 🦅🌿';
+      playSfx('success');
+      startConfetti();
+    }
+
+    function goToStage(num) {
+      state.stage = num;
+      updateStepIndicator();
+
+      document.getElementById('stage1').classList.add('hidden');
+      document.getElementById('stage2').classList.add('hidden');
+      document.getElementById('stage3').classList.add('hidden');
+      document.getElementById('stage4').classList.add('hidden');
+
+      if (num === 1) {
+        document.getElementById('stage1').classList.remove('hidden');
+        initStage1();
+      } else if (num === 2) {
+        document.getElementById('stage2').classList.remove('hidden');
+        document.getElementById('stage2').classList.add('flex');
+        initStage2();
+      } else if (num === 3) {
+        document.getElementById('stage3').classList.remove('hidden');
+        document.getElementById('stage3').classList.add('flex');
+        initStage3();
+      } else if (num === 4) {
+        document.getElementById('stage4').classList.remove('hidden');
+        document.getElementById('stage4').classList.add('flex');
+        initStage4();
+      }
+    }
+
+    function restartGame() {
+      playSfx('eagle');
+      stopConfetti();
+      goToStage(1);
+    }
+
+    let confettiTimer = null;
+    const colors = ['#10b981', '#34d399', '#38bdf8', '#facc15', '#f43f5e', '#a855f7'];
+    let particles = [];
+
+    function startConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      particles = [];
+      for (let i = 0; i < 90; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * -canvas.height,
+          size: Math.random() * 8 + 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 3,
+          vy: Math.random() * 3 + 2.5,
+          rot: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 8
+        });
+      }
+
+      function renderConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vRot;
+          if (p.y > canvas.height) {
+            p.y = -10;
+            p.x = Math.random() * canvas.width;
+          }
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+          ctx.restore();
+        });
+        confettiTimer = requestAnimationFrame(renderConfetti);
+      }
+      renderConfetti();
+    }
+
+    function stopConfetti() {
+      if (confettiTimer) cancelAnimationFrame(confettiTimer);
+      const canvas = document.getElementById('confettiCanvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      const canvas = document.getElementById('confettiCanvas');
+      if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+
+    window.onload = function() {
+      initStage1();
+    };
+  </script>
+</body>
+</html>

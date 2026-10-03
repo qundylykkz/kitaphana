@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="kk" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AQYLDY KITAPHANA | Балаларға арналған ақылды кітапхана</title>
+  
+  <!-- Қазақ тілінің барлық төл әріптерін (Ә, Ғ, Қ, Ң, Ө, Ұ, Ү, Һ, І) толық қолдайтын Montserrat қаріпі -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* Балаларға арналған жарқын, жылы және жұмсақ фон */
+    body {
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top left, #fef9c3 0%, #e0f2fe 45%, #fce7f3 100%);
+      color: #1e293b;
+      overflow-x: hidden;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    .font-brand {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+    }
+
+    .font-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+    }
+
+    /* Балаларға арналған жарқын көңілді градиент жазуы */
+    .kids-title-gradient {
+      background: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 3px 6px rgba(249, 115, 22, 0.25));
+    }
+
+    /* 3D вертикалды кітап мұқабасының әсері */
+    .book-card {
+      perspective: 1000px;
+      transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .book-card:hover {
+      transform: translateY(-8px);
+    }
+
+    .book-cover-3d {
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+      box-shadow: -10px 14px 25px -4px rgba(15, 23, 42, 0.15), 0 0 10px rgba(251, 191, 36, 0.3);
+    }
+    .book-card:hover .book-cover-3d {
+      transform: rotateY(-8deg) scale(1.02);
+      box-shadow: -14px 20px 30px -4px rgba(15, 23, 42, 0.25), 0 0 20px rgba(251, 191, 36, 0.5);
+    }
+
+    /* Скролл кезінде көрінетін кітаптар анимациясы (Scroll Reveal) */
+    .reveal-book {
+      opacity: 0;
+      transform: translateY(50px) scale(0.94);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .reveal-book.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Эмблеманың артында баяу айналып, жылжып тұратын сиқырлы сәулелі фон */
+    @keyframes spinGlow {
+      0% {
+        transform: rotate(0deg) scale(1);
+      }
+      50% {
+        transform: rotate(180deg) scale(1.08);
+      }
+      100% {
+        transform: rotate(360deg) scale(1);
+      }
+    }
+
+    @keyframes pulseAura {
+      0%, 100% {
+        opacity: 0.65;
+        filter: blur(24px);
+      }
+      50% {
+        opacity: 0.95;
+        filter: blur(34px);
+      }
+    }
+
+    .emblem-spin-bg {
+      animation: spinGlow 18s linear infinite;
+    }
+
+    .emblem-aura {
+      animation: pulseAura 4s ease-in-out infinite;
+    }
+
+    /* Балаларға арналған көңілді бұлттар мен жұлдызшалар көрінісі */
+    .cloud-bg {
+      background-image: radial-gradient(#ffffff 25%, transparent 26%), radial-gradient(#ffffff 25%, transparent 26%);
+      background-size: 70px 70px;
+      background-position: 0 0, 35px 35px;
+      opacity: 0.35;
+    }
+  </style>
+</head>
+<body class="relative min-h-screen selection:bg-amber-300 selection:text-amber-950">
+
+  <!-- Фондағы сиқырлы бөлшектер кенебі -->
+  <canvas id="magicParticles" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+  <!-- Көңілді шарлар мен бұлттар сәулесі -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden cloud-bg"></div>
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-20 -left-20 w-80 h-80 bg-amber-300/30 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/4 -right-24 w-96 h-96 bg-sky-300/35 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-10 left-1/4 w-96 h-96 bg-pink-300/30 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="relative z-10 flex flex-col min-h-screen">
+
+    <!-- Жоғарғы мәзір жолағы (Header) -->
+    <header class="w-full backdrop-blur-md bg-white/80 border-b-4 border-amber-300 sticky top-0 z-50 shadow-sm transition-all">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        
+        <!-- Логотип: Ақылды кітапхана -->
+        <a href="#bastapqy" class="flex items-center gap-3 group" onclick="playBubbleSound()">
+          <div class="w-13 h-13 p-3 rounded-2xl bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 border-amber-400 flex items-center justify-center shadow-md shadow-amber-300/50 group-hover:rotate-6 transition transform">
+            <i class="fa-solid fa-book-open-reader text-amber-900 text-2xl"></i>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-brand font-black text-2xl sm:text-3xl tracking-wide text-slate-800 group-hover:text-amber-600 transition">
+              AQYLDY KITAPHANA
+            </span>
+            <span class="text-xs font-extrabold text-sky-600 tracking-wider uppercase flex items-center gap-1.5">
+              <span>🎨 AI ЖӘНЕ ART ӘЛЕМІ</span>
+              <span class="inline-block w-2 h-2 rounded-full bg-pink-500"></span>
+              <span class="text-amber-600">5-6 ЖАС</span>
+            </span>
+          </div>
+        </a>
+
+        <!-- Бағыттар -->
+        <nav class="hidden md:flex items-center gap-6 font-sub font-bold text-sm text-slate-700">
+          <a href="#bastapqy" class="px-3 py-1.5 rounded-xl hover:bg-amber-100 hover:text-amber-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-house text-amber-500"></i> Басты бет
+          </a>
+          <a href="#kitaptar" class="px-3 py-1.5 rounded-xl hover:bg-sky-100 hover:text-sky-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-book-bookmark text-sky-500"></i> Кітап сөресі
+          </a>
+          <a href="#quotes" class="px-3 py-1.5 rounded-xl hover:bg-pink-100 hover:text-pink-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-star text-pink-500"></i> Ұлағатты сөз
+          </a>
+        </nav>
+
+        <!-- Оқуды бастау батырмасы -->
+        <a href="#kitaptar" onclick="playSparkleSound()" class="px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-pink-400 hover:from-amber-500 hover:to-pink-500 text-white font-brand font-bold text-base shadow-lg shadow-orange-300/50 hover:scale-105 active:scale-95 transition flex items-center gap-2 border-2 border-white">
+          <span>📚 Оқуды бастау</span>
+          <i class="fa-solid fa-chevron-down text-xs animate-bounce"></i>
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-grow">
+      <!-- Басты бет (Hero Section) -->
+      <section id="bastapqy" class="pt-8 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
+        
+        <!-- Үлкен эмблема және оның артындағы анимациялы қозғалмалы сәулелі фон -->
+        <div class="relative mb-6 flex items-center justify-center">
+          
+          <!-- Анимациямен баяу айналып және жылжып тұратын сиқырлы түрлі-түсті фон сәулесі -->
+          <div class="absolute -inset-6 sm:-inset-10 emblem-spin-bg rounded-full bg-gradient-to-tr from-amber-400 via-pink-400 to-sky-400 opacity-70 filter blur-xl emblem-aura"></div>
+          
+          <!-- Қосымша толқынды жұмсақ жарық жиегі -->
+          <div class="absolute -inset-3 sm:-inset-4 rounded-full bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-300 opacity-60 filter blur-md animate-pulse"></div>
+
+          <!-- Негізгі үлкен эмблема контейнері (logo.png) -->
+          <div class="relative z-10 w-44 h-44 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-full p-2 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-300 shadow-2xl border-4 border-white flex items-center justify-center backdrop-blur-md hover:scale-105 transition-transform duration-300">
+            <div class="w-full h-full rounded-full overflow-hidden bg-white/95 flex items-center justify-center shadow-inner relative group">
+              <img 
+                src="images/logo.jpeg" 
+                alt="AQYLDY KITAPHANA Эмблемасы" 
+                onerror="this.onerror=null; this.src='https://placehold.co/400x400/fffbeb/b45309?text=%F0%9F%93%96%0AAQYLDY%0AKITAPHANA%0A(images/logo.png)';"
+                class="w-full h-full object-cover rounded-full p-1 transform group-hover:rotate-3 transition duration-500"
+              >
+              <!-- Үстіндегі балаларға арналған сәуле әсері -->
+              <div class="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-black/10 pointer-events-none rounded-full"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Белгі (Анимациясы алынып тасталған, балаларға арналған қалыпты, көңілді дизайн) -->
+        <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/95 border-2 border-amber-400 text-amber-900 text-sm sm:text-base font-sub font-extrabold mb-5 shadow-sm">
+          <span class="text-xl">🌟</span>
+          <span>5-6 жастағы балалардың сиқырлы кітап әлемі</span>
+          <span class="text-xl">🎈</span>
+        </div>
+
+        <!-- Басты тақырып: AQYLDY KITAPHANA -->
+        <h1 class="font-brand font-black text-5xl sm:text-7xl md:text-8xl tracking-tight uppercase leading-none kids-title-gradient mb-3">
+          AQYLDY KITAPHANA
+        </h1>
+
+        <!-- Қосалқы көңілді тақырып -->
+        <div class="flex items-center gap-2 flex-wrap justify-center font-sub font-black text-xl sm:text-2xl md:text-3xl text-sky-700 mb-8">
+          <span class="bg-sky-100 text-sky-700 px-3 py-1 rounded-2xl border border-sky-300">🤖 AI ЖӘНЕ ART ӘЛЕМІ</span>
+          <span class="text-pink-500">•</span>
+          <span class="bg-pink-100 text-pink-700 px-3 py-1 rounded-2xl border border-pink-300">📖 СИҚЫРЛЫ КІТАПТАР</span>
+        </div>
+
+        <!-- Президент дәйексөзі мен ұран тақтасы (Балалар стиліндегі ашық әрі таза блок) -->
+        <div id="quotes" class="w-full max-w-4xl bg-white/90 border-4 border-amber-300 rounded-[2.5rem] p-6 sm:p-8 backdrop-blur-md shadow-xl relative overflow-hidden mb-10">
+          
+          <!-- Бұрыштардағы балалар ойыншық элементтері -->
+          <div class="absolute -top-6 -right-6 w-24 h-24 bg-yellow-200/60 rounded-full blur-lg pointer-events-none"></div>
+          <div class="absolute -bottom-6 -left-6 w-24 h-24 bg-sky-200/60 rounded-full blur-lg pointer-events-none"></div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            
+            <!-- Сол жақ: Қасым-Жомарт Тоқаевтың сөзі -->
+            <div class="text-left border-b md:border-b-0 md:border-r-2 border-amber-200 pb-6 md:pb-0 md:pr-6 flex flex-col justify-center">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-9 h-9 rounded-2xl bg-amber-400 text-amber-950 flex items-center justify-center font-black text-lg shadow-sm">
+                  <i class="fa-solid fa-quote-left"></i>
+                </span>
+                <span class="text-xs font-black uppercase text-amber-800 tracking-wider">Ұлағатты сөз</span>
+              </div>
+
+              <blockquote class="text-xl sm:text-2xl font-brand font-bold text-slate-800 leading-snug">
+                «Озық ойлы ұлт болудың төте жолы — кітап оқу»
+              </blockquote>
+
+              <p class="mt-3 text-xs sm:text-sm font-bold text-slate-600">
+                Қасым-Жомарт Тоқаев, <br>
+                <span class="text-amber-700 font-semibold">Қазақстан Республикасының Президенті</span>
+              </p>
+
+              <!-- 3 Белгі: Оқылан, Кәсік, Сәріс бағыттары -->
+              <div class="flex items-center gap-3 mt-5 pt-4 border-t-2 border-slate-100 flex-wrap">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900 shadow-sm">
+                  <span class="text-base">💡</span>
+                  <span>Ойлан</span>
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-200 text-xs font-bold text-sky-900 shadow-sm">
+                  <span class="text-base">🎨</span>
+                  <span>Жаса</span>
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-900 shadow-sm">
+                  <span class="text-base">🤝</span>
+                  <span>Бөліс</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Оң жақ: Басты шақыру ұраны -->
+            <div class="flex flex-col items-center justify-center text-center px-2 bg-gradient-to-br from-amber-50 via-sky-50 to-pink-50 p-6 rounded-3xl border-2 border-dashed border-amber-300">
+              <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-400 to-orange-400 text-white flex items-center justify-center shadow-md shadow-orange-300 mb-3 text-3xl">
+                🚀
+              </div>
+              <h3 class="font-brand font-black text-2xl sm:text-3xl text-slate-800 tracking-wide uppercase leading-tight">
+                Кітапты <span class="text-amber-500 bg-amber-100 px-2 py-0.5 rounded-xl">ОҚЫ,</span><br>
+                Қиялыңды <span class="text-sky-500 bg-sky-100 px-2 py-0.5 rounded-xl">ҚОС,</span><br>
+                Озат <span class="text-emerald-500 bg-emerald-100 px-2 py-0.5 rounded-xl">БОЛ!</span>
+              </h3>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Төменге өту батырмасы -->
+        <a href="#kitaptar" onclick="playBubbleSound()" class="group flex flex-col items-center text-slate-600 hover:text-amber-600 transition">
+          <span class="text-sm font-sub font-extrabold tracking-wider mb-2 uppercase text-slate-700">
+            👇 Кітап сөресіне өту
+          </span>
+          <div class="w-12 h-12 rounded-full bg-white border-2 border-amber-400 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:bg-amber-50 transition">
+            <i class="fa-solid fa-arrow-down text-amber-500 group-hover:translate-y-1 transition-transform"></i>
+          </div>
+        </a>
+
+      </section>
+
+      <!-- Кітаптар сөресі (Books Section with Scroll Animation) -->
+      <section id="kitaptar" class="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        
+        <div class="text-center mb-10">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-xs sm:text-sm font-extrabold uppercase tracking-wider mb-3">
+            📚 Танымдық ертегілер, әңгімелер және ойындар
+          </div>
+          <h2 class="font-brand font-black text-3xl sm:text-5xl text-slate-800 tracking-tight">
+            Ғажайып кітаптар сөресі
+          </h2>
+          <p class="text-slate-600 max-w-2xl mx-auto mt-2 text-sm sm:text-base font-semibold">
+            Кітапты басып оқыңыз, оған арналған мультфильм-видеоны көріңіз және қызықты дидактикалық ойын ойнаңыз!
+          </p>
+
+          <!-- Санат сүзгілері (Фильтрлер балалар стилінде) -->
+          <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-6">
+            <button onclick="filterBooks('all', this)" class="category-btn active px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-brand font-bold bg-amber-400 text-slate-900 border-2 border-amber-500 shadow-md transition transform hover:scale-105">
+              ✨ Барлығы
+            </button>
+            <button onclick="filterBooks('ertegi', this)" class="category-btn px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-brand font-bold bg-white text-slate-700 border-2 border-slate-200 hover:border-amber-400 hover:text-amber-700 shadow-sm transition transform hover:scale-105">
+              🦊 Сиқырлы ертегілер
+            </button>
+            <button onclick="filterBooks('ai', this)" class="category-btn px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-brand font-bold bg-white text-slate-700 border-2 border-slate-200 hover:border-sky-400 hover:text-sky-700 shadow-sm transition transform hover:scale-105">
+              🤖 AI және Ғарыш
+            </button>
+            <button onclick="filterBooks('art', this)" class="category-btn px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-brand font-bold bg-white text-slate-700 border-2 border-slate-200 hover:border-pink-400 hover:text-pink-700 shadow-sm transition transform hover:scale-105">
+              🎨 Өнер және Табиғат
+            </button>
+          </div>
+        </div>
+
+        <!-- Кітаптар торы (Books Grid) -->
+        <div id="booksGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
+          <!-- ==================== I. СИҚЫРЛЫ ЕРТЕГІЛЕР (3 КІТАП) ==================== -->
+
+          <!-- 1-КІТАП (Ертегі 1) -->
+          <div class="book-card reveal-book" data-category="ertegi">
+            <div class="bg-white rounded-[2rem] p-5 border-4 border-amber-200 hover:border-amber-400 shadow-lg flex flex-col h-full transition duration-300">
+              <a href="https://drive.google.com/file/d/1TuTbSRmDQB6mz2wf2gWGsLKPY6G6hQMF/view?usp=drive_link" target="_blank" rel="noopener noreferrer" class="relative group block overflow-hidden rounded-2xl mb-4 bg-amber-50 border-2 border-amber-100" title="Кітап сілтемесін бөлек вкладкада ашу">
+                <img 
+                  src="images/birnarse_kitap1.jpg" 
+                  alt="AQYLDY KITAPHANA - Достық қазына" 
+                  onerror="this.src='https://placehold.co/400x560/fef3c7/b45309?text=1-КІТАП%0A(images/birnarse_kitap1.png)';"
+                  class="book-cover-3d w-full aspect-[3/4] object-cover rounded-2xl transform group-hover:scale-105 transition duration-300"
+                >
+                <div class="absolute inset-0 bg-amber-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                  <span class="px-4 py-2 rounded-full bg-amber-400 text-slate-900 text-xs font-black shadow-lg flex items-center gap-1.5 border-2 border-white">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Кітапты ашу
+                  </span>
+                </div>
+                <span class="absolute top-3 left-3 bg-amber-400 text-slate-900 font-brand font-black text-xs px-3 py-1 rounded-full uppercase shadow-sm border border-white">
+                  🦊 ЕРТЕГІ
+                </span>
+              </a>
+
+              <div class="flex-grow">
+                <h3 class="font-brand font-black text-xl text-slate-800 hover:text-amber-600 transition mb-1">
+                  Достық — әлемдегі ең бағалы қазына
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-4 font-semibold">
+                  Адалдық, мейірімділік пен білімнің күшін түсіндіретін балабақша бүлдіршіндеріне арналған ғажайып ертегі.
+                </p>
+              </div>
+
+              <div class="pt-3 border-t-2 border-slate-100 flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="https://drive.google.com/file/d/1TuTbSRmDQB6mz2wf2gWGsLKPY6G6hQMF/view?usp=drive_link" target="_blank" rel="noopener noreferrer" class="px-3 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-book-open text-amber-600"></i> Оқу
+                  </a>
+                  <button onclick="openVideoModal('Достық — әлемдегі ең бағалы қазына', 'videos/birnarse1.mp4')" class="px-3 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-play text-sky-600"></i> Видео
+                  </button>
+                </div>
+                <a href="didaktikalyk_oiyn1.html" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-brand font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-200 transition transform active:scale-95 border border-white">
+                  <i class="fa-solid fa-gamepad text-sm"></i> Дидактикалық ойын ойнау
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2-КІТАП (Ертегі 2) -->
+          <div class="book-card reveal-book" data-category="ertegi">
+            <div class="bg-white rounded-[2rem] p-5 border-4 border-amber-200 hover:border-amber-400 shadow-lg flex flex-col h-full transition duration-300">
+              <a href="https://drive.google.com/file/d/1lW0GM6JrVzd2P5YIfD_1aMsitZRDVOXN/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="relative group block overflow-hidden rounded-2xl mb-4 bg-amber-50 border-2 border-amber-100" title="Кітап сілтемесін бөлек вкладкада ашу">
+                <img 
+                  src="images/birnarse_kitap2.jpg" 
+                  alt="AQYLDY KITAPHANA - Алтын Сандық" 
+                  onerror="this.src='https://placehold.co/400x560/fef3c7/b45309?text=2-КІТАП%0A(images/birnarse_kitap2.jpg)';"
+                  class="book-cover-3d w-full aspect-[3/4] object-cover rounded-2xl transform group-hover:scale-105 transition duration-300"
+                >
+                <div class="absolute inset-0 bg-amber-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                  <span class="px-4 py-2 rounded-full bg-amber-400 text-slate-900 text-xs font-black shadow-lg flex items-center gap-1.5 border-2 border-white">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Кітапты ашу
+                  </span>
+                </div>
+                <span class="absolute top-3 left-3 bg-amber-400 text-slate-900 font-brand font-black text-xs px-3 py-1 rounded-full uppercase shadow-sm border border-white">
+                  🦊 ЕРТЕГІ
+                </span>
+              </a>
+
+              <div class="flex-grow">
+                <h3 class="font-brand font-black text-xl text-slate-800 hover:text-amber-600 transition mb-1">
+                  Батыл Қоян
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-4 font-semibold">
+                  Орман жануарларының татулығы мен құпия сандықтың сырын ашатын қызықты балалар ертегісі.
+                </p>
+              </div>
+
+              <div class="pt-3 border-t-2 border-slate-100 flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="https://drive.google.com/file/d/1lW0GM6JrVzd2P5YIfD_1aMsitZRDVOXN/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="px-3 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-book-open text-amber-600"></i> Оқу
+                  </a>
+                  <button onclick="openVideoModal('БАТЫЛ ҚОЯН', 'videos/birnarse2.mp4')" class="px-3 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-play text-sky-600"></i> Видео
+                  </button>
+                </div>
+                <a href="didaktikalyk_oiyn2.html" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-brand font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-200 transition transform active:scale-95 border border-white">
+                  <i class="fa-solid fa-gamepad text-sm"></i> Дидактикалық ойын ойнау
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3-КІТАП (Ертегі 3) -->
+          <div class="book-card reveal-book" data-category="ertegi">
+            <div class="bg-white rounded-[2rem] p-5 border-4 border-amber-200 hover:border-amber-400 shadow-lg flex flex-col h-full transition duration-300">
+              <a href="https://drive.google.com/file/d/1pA1Bd4yWS_cxuFkso7runc2r8MwDtSjW/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="relative group block overflow-hidden rounded-2xl mb-4 bg-amber-50 border-2 border-amber-100" title="Кітап сілтемесін бөлек вкладкада ашу">
+                <img 
+                  src="images/birnarse_kitap3.jpg" 
+                  alt="AQYLDY KITAPHANA - Батыр Қоян" 
+                  onerror="this.src='https://placehold.co/400x560/fef3c7/b45309?text=3-КІТАП%0A(images/birnarse_kitap3.png)';"
+                  class="book-cover-3d w-full aspect-[3/4] object-cover rounded-2xl transform group-hover:scale-105 transition duration-300"
+                >
+                <div class="absolute inset-0 bg-amber-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                  <span class="px-4 py-2 rounded-full bg-amber-400 text-slate-900 text-xs font-black shadow-lg flex items-center gap-1.5 border-2 border-white">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Кітапты ашу
+                  </span>
+                </div>
+                <span class="absolute top-3 left-3 bg-amber-400 text-slate-900 font-brand font-black text-xs px-3 py-1 rounded-full uppercase shadow-sm border border-white">
+                  🦊 ЕРТЕГІ
+                </span>
+              </a>
+
+              <div class="flex-grow">
+                <h3 class="font-brand font-black text-xl text-slate-800 hover:text-amber-600 transition mb-1">
+                  Күн мен көктемнің оянуы
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-4 font-semibold">
+                  Бұл ертегі кішкентай бүлдіршіндерге халқымыздың ұлық мерекесі — Наурыз мейрамының қалай пайда болғанын, Күн мен Түннің қалай теңелетінін және табиғаттың қалай оянатынын сиқырлы кейіпкерлер арқылы түсіндіреді.
+                </p>
+              </div>
+
+              <div class="pt-3 border-t-2 border-slate-100 flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="https://drive.google.com/file/d/1pA1Bd4yWS_cxuFkso7runc2r8MwDtSjW/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="px-3 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-book-open text-amber-600"></i> Оқу
+                  </a>
+                  <button onclick="openVideoModal('КҮН МЕН ТҮННІҢ ТЕҢЕСУІ', 'videos/birnarse3.mp4')" class="px-3 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-play text-sky-600"></i> Видео
+                  </button>
+                </div>
+                <a href="didaktikalyk_oiyn3.html" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-brand font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-200 transition transform active:scale-95 border border-white">
+                  <i class="fa-solid fa-gamepad text-sm"></i> Дидактикалық ойын ойнау
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== II. AI ЖӘНЕ ҒАРЫШ ӘЛЕМІ (3 КІТАП) ==================== -->
+
+          <!-- 4-КІТАП (Ғарыш/AI 1) -->
+          <div class="book-card reveal-book" data-category="ai">
+            <div class="bg-white rounded-[2rem] p-5 border-4 border-sky-200 hover:border-sky-400 shadow-lg flex flex-col h-full transition duration-300">
+              <a href="https://drive.google.com/file/d/1yIgFEYxFXz9ZU9rpFR9_J6_6lIq7CzvT/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="relative group block overflow-hidden rounded-2xl mb-4 bg-sky-50 border-2 border-sky-100" title="Кітап сілтемесін бөлек вкладкада ашу">
+                <img 
+                  src="images/birnarse_kitap4.jpg" 
+                  alt="AQYLDY KITAPHANA - AI Досым" 
+                  onerror="this.src='https://placehold.co/400x560/e0f2fe/0284c7?text=4-КІТАП%0A(images/birnarse_kitap4.png)';"
+                  class="book-cover-3d w-full aspect-[3/4] object-cover rounded-2xl transform group-hover:scale-105 transition duration-300"
+                >
+                <div class="absolute inset-0 bg-sky-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                  <span class="px-4 py-2 rounded-full bg-sky-400 text-slate-900 text-xs font-black shadow-lg flex items-center gap-1.5 border-2 border-white">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Кітапты ашу
+                  </span>
+                </div>
+                <span class="absolute top-3 left-3 bg-sky-400 text-slate-900 font-brand font-black text-xs px-3 py-1 rounded-full uppercase shadow-sm border border-white">
+                  🤖 AI ЖӘНЕ ҒАРЫШ
+                </span>
+              </a>
+
+              <div class="flex-grow">
+                <h3 class="font-brand font-black text-xl text-slate-800 hover:text-sky-600 transition mb-1">
+                  ЖҰЛДЫЗШЫ БАЛА
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-4 font-semibold">
+                  Жұлдыздар, Жер шары мен Айға саяхат жасап, ғарыш құпияларын бірге зерттейік!
+                </p>
+              </div>
+
+              <div class="pt-3 border-t-2 border-slate-100 flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="https://drive.google.com/file/d/1yIgFEYxFXz9ZU9rpFR9_J6_6lIq7CzvT/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="px-3 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-book-open text-amber-600"></i> Оқу
+                  </a>
+                  <button onclick="openVideoModal('ЖҰЛДЫЗШЫ БАЛА', 'videos/birnarse4.mp4')" class="px-3 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-play text-sky-600"></i> Видео
+                  </button>
+                </div>
+                <a href="didaktikalyk_oiyn4.html" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-brand font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-200 transition transform active:scale-95 border border-white">
+                  <i class="fa-solid fa-gamepad text-sm"></i> Дидактикалық ойын ойнау
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5-КІТАП (Ғарыш/AI 2) -->
+          <div class="book-card reveal-book" data-category="ai">
+            <div class="bg-white rounded-[2rem] p-5 border-4 border-sky-200 hover:border-sky-400 shadow-lg flex flex-col h-full transition duration-300">
+              <a href="https://drive.google.com/file/d/1cBtju1ffGWC1LUlEmZa09ZExMj_7u4PV/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="relative group block overflow-hidden rounded-2xl mb-4 bg-sky-50 border-2 border-sky-100" title="Кітап сілтемесін бөлек вкладкада ашу">
+                <img 
+                  src="images/birnarse_kitap5.jpg" 
+                  alt="AQYLDY KITAPHANA - Кішкентай Ғарышкер" 
+                  onerror="this.src='https://placehold.co/400x560/e0f2fe/0284c7?text=5-КІТАП%0A(images/birnarse_kitap5.png)';"
+                  class="book-cover-3d w-full aspect-[3/4] object-cover rounded-2xl transform group-hover:scale-105 transition duration-300"
+                >
+                <div class="absolute inset-0 bg-sky-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                  <span class="px-4 py-2 rounded-full bg-sky-400 text-slate-900 text-xs font-black shadow-lg flex items-center gap-1.5 border-2 border-white">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Кітапты ашу
+                  </span>
+                </div>
+                <span class="absolute top-3 left-3 bg-sky-400 text-slate-900 font-brand font-black text-xs px-3 py-1 rounded-full uppercase shadow-sm border border-white">
+                  🤖 AI ЖӘНЕ ҒАРЫШ
+                </span>
+              </a>
+
+              <div class="flex-grow">
+                <h3 class="font-brand font-black text-xl text-slate-800 hover:text-sky-600 transition mb-1">
+                  САНЖАР ЖӘНЕ КИБЕР-ТҰЛПАР
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-4 font-semibold">
+                  Ғарыш кеңістігінде кішкентай жұлдыздарды бағып жүрген 6 жасар Санжар мен оның ақылды серігі — қанатты робот Кибер-Тұлпардың басынан кешкен сиқырлы оқиғасы!
+                </p>
+              </div>
+
+              <div class="pt-3 border-t-2 border-slate-100 flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="https://drive.google.com/file/d/1cBtju1ffGWC1LUlEmZa09ZExMj_7u4PV/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="px-3 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-book-open text-amber-600"></i> Оқу
+                  </a>
+                  <button onclick="openVideoModal('САНЖАР ЖӘНЕ КИБЕР-ТҰЛПАР', 'videos/birnarse5.mp4')" class="px-3 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-play text-sky-600"></i> Видео
+                  </button>
+                </div>
+                <a href="didaktikalyk_oiyn5.html" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-brand font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-200 transition transform active:scale-95 border border-white">
+                  <i class="fa-solid fa-gamepad text-sm"></i> Дидактикалық ойын ойнау
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6-КІТАП (Ғарыш/AI 3) -->
+          <div class="book-card reveal-book" data-category="ai">
+            <div class="bg-white rounded-[2rem] p-5 border-4 border-sky-200 hover:border-sky-400 shadow-lg flex flex-col h-full transition duration-300">
+              <a href="https://drive.google.com/file/d/1Txp0A-oiJBVGWgjxpFfx2TJM_c3nZc6f/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="relative group block overflow-hidden rounded-2xl mb-4 bg-sky-50 border-2 border-sky-100" title="Кітап сілтемесін бөлек вкладкада ашу">
+                <img 
+                  src="images/birnarse_kitap6.jpg" 
+                  alt="AQYLDY KITAPHANA - Планеталар" 
+                  onerror="this.src='https://placehold.co/400x560/e0f2fe/0284c7?text=6-КІТАП%0A(images/birnarse_kitap6.png)';"
+                  class="book-cover-3d w-full aspect-[3/4] object-cover rounded-2xl transform group-hover:scale-105 transition duration-300"
+                >
+                <div class="absolute inset-0 bg-sky-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                  <span class="px-4 py-2 rounded-full bg-sky-400 text-slate-900 text-xs font-black shadow-lg flex items-center gap-1.5 border-2 border-white">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Кітапты ашу
+                  </span>
+                </div>
+                <span class="absolute top-3 left-3 bg-sky-400 text-slate-900 font-brand font-black text-xs px-3 py-1 rounded-full uppercase shadow-sm border border-white">
+                  🤖 AI ЖӘНЕ ҒАРЫШ
+                </span>
+              </a>
+
+              <div class="flex-grow">
+                <h3 class="font-brand font-black text-xl text-slate-800 hover:text-sky-600 transition mb-1">
+                  МАРСТАҒЫ БӘЙШЕШЕК
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-4 font-semibold">
+                  Қызыл ғаламшар Марста тұратын кішкентай қазақ қызы Сәуле мен оның ақылды серігі — AI дрон «Аққанаттың» қызықты шытырманы! Жердегі әжесі жіберген бәйшешек дәнін Марс топырағына еккен достар, күй әуені мен ғылымның көмегімен алғашқы гүлді өсіріп шығарады.
+                </p>
+              </div>
+
+              <div class="pt-3 border-t-2 border-slate-100 flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="https://drive.google.com/file/d/1Txp0A-oiJBVGWgjxpFfx2TJM_c3nZc6f/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="px-3 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-book-open text-amber-600"></i> Оқу
+                  </a>
+                  <button onclick="openVideoModal('МАРСТАҒЫ БӘЙШЕШЕК', 'videos/birnarse6.mp4')" class="px-3 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-play text-sky-600"></i> Видео
+                  </button>
+                </div>
+                <a href="didaktikalyk_oiyn6.html" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-brand font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-200 transition transform active:scale-95 border border-white">
+                  <i class="fa-solid fa-gamepad text-sm"></i> Дидактикалық ойын ойнау
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== III. ӨНЕР ЖӘНЕ ТАБИҒАТ / ART (3 КІТАП) ==================== -->
+
+          <!-- 7-КІТАП (Өнер 1) -->
+          <div class="book-card reveal-book" data-category="art">
+            <div class="bg-white rounded-[2rem] p-5 border-4 border-pink-200 hover:border-pink-400 shadow-lg flex flex-col h-full transition duration-300">
+              <a href="https://drive.google.com/file/d/1F_yt6sjVo0Hd3FDI8Lq6Od8Rxjk0kJJP/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="relative group block overflow-hidden rounded-2xl mb-4 bg-pink-50 border-2 border-pink-100" title="Кітап сілтемесін бөлек вкладкада ашу">
+                <img 
+                  src="images/birnarse_kitap7.jpg" 
+                  alt="AQYLDY KITAPHANA - Түрлі Түсті Бояулар" 
+                  onerror="this.src='https://placehold.co/400x560/fce7f3/db2777?text=7-КІТАП%0A(images/birnarse_kitap7.png)';"
+                  class="book-cover-3d w-full aspect-[3/4] object-cover rounded-2xl transform group-hover:scale-105 transition duration-300"
+                >
+                <div class="absolute inset-0 bg-pink-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                  <span class="px-4 py-2 rounded-full bg-pink-400 text-slate-900 text-xs font-black shadow-lg flex items-center gap-1.5 border-2 border-white">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Кітапты ашу
+                  </span>
+                </div>
+                <span class="absolute top-3 left-3 bg-pink-400 text-slate-900 font-brand font-black text-xs px-3 py-1 rounded-full uppercase shadow-sm border border-white">
+                  🎨 ӨНЕР ЖӘНЕ ART
+                </span>
+              </a>
+
+              <div class="flex-grow">
+                <h3 class="font-brand font-black text-xl text-slate-800 hover:text-pink-600 transition mb-1">
+                  СИҚЫРЛЫ ҚЫЛҚАЛАМ
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-4 font-semibold">
+                Алатаудың бөктерінде өмір сүретін кішкентай Айзере мен атасы сыйлаған арша қылқаламның сиқырлы хикаясы!
+                </p>
+              </div>
+
+              <div class="pt-3 border-t-2 border-slate-100 flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="https://drive.google.com/file/d/1F_yt6sjVo0Hd3FDI8Lq6Od8Rxjk0kJJP/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="px-3 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-book-open text-amber-600"></i> Оқу
+                  </a>
+                  <button onclick="openVideoModal('СИҚЫРЛЫ ҚЫЛҚАЛАМ', 'videos/birnarse7.mp4')" class="px-3 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-play text-sky-600"></i> Видео
+                  </button>
+                </div>
+                <a href="didaktikalyk_oiyn7.html" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-brand font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-200 transition transform active:scale-95 border border-white">
+                  <i class="fa-solid fa-gamepad text-sm"></i> Дидактикалық ойын ойнау
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 8-КІТАП (Өнер 2) -->
+          <div class="book-card reveal-book" data-category="art">
+            <div class="bg-white rounded-[2rem] p-5 border-4 border-pink-200 hover:border-pink-400 shadow-lg flex flex-col h-full transition duration-300">
+              <a href="https://drive.google.com/file/d/1GEpVHZK35Y3aJ2qybUyVkiB_ZqRl9I1e/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="relative group block overflow-hidden rounded-2xl mb-4 bg-pink-50 border-2 border-pink-100" title="Кітап сілтемесін бөлек вкладкада ашу">
+                <img 
+                  src="images/birnarse_kitap8.jpg" 
+                  alt="AQYLDY KITAPHANA - Табиғат Сыры" 
+                  onerror="this.src='https://placehold.co/400x560/fce7f3/db2777?text=8-КІТАП%0A(images/birnarse_kitap8.jpg)';"
+                  class="book-cover-3d w-full aspect-[3/4] object-cover rounded-2xl transform group-hover:scale-105 transition duration-300"
+                >
+                <div class="absolute inset-0 bg-pink-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                  <span class="px-4 py-2 rounded-full bg-pink-400 text-slate-900 text-xs font-black shadow-lg flex items-center gap-1.5 border-2 border-white">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Кітапты ашу
+                  </span>
+                </div>
+                <span class="absolute top-3 left-3 bg-pink-400 text-slate-900 font-brand font-black text-xs px-3 py-1 rounded-full uppercase shadow-sm border border-white">
+                  🎨 ӨНЕР ЖӘНЕ ART
+                </span>
+              </a>
+
+              <div class="flex-grow">
+                <h3 class="font-brand font-black text-xl text-slate-800 hover:text-pink-600 transition mb-1">
+                  ОРМАН ҚОРҒАУШЫСЫ
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-4 font-semibold">
+                  Құстардың әні, жаңбырдың тырсылы және жапырақтар сыбдыры арқылы дыбыс әлемін тану.
+                </p>
+              </div>
+
+              <div class="pt-3 border-t-2 border-slate-100 flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="https://drive.google.com/file/d/1GEpVHZK35Y3aJ2qybUyVkiB_ZqRl9I1e/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="px-3 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-book-open text-amber-600"></i> Оқу
+                  </a>
+                  <button onclick="openVideoModal('ОРМАН ҚОРҒАУШЫСЫ', 'videos/birnarse8.mp4')" class="px-3 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-play text-sky-600"></i> Видео
+                  </button>
+                </div>
+                <a href="didaktikalyk_oiyn8.html" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-brand font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-200 transition transform active:scale-95 border border-white">
+                  <i class="fa-solid fa-gamepad text-sm"></i> Дидактикалық ойын ойнау
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 9-КІТАП (Өнер 3) -->
+          <div class="book-card reveal-book" data-category="art">
+            <div class="bg-white rounded-[2rem] p-5 border-4 border-pink-200 hover:border-pink-400 shadow-lg flex flex-col h-full transition duration-300">
+              <a href="https://drive.google.com/file/d/1Ka0Eeah-YuSk99IebUQWkX1ocunO0Ed7/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="relative group block overflow-hidden rounded-2xl mb-4 bg-pink-50 border-2 border-pink-100" title="Кітап сілтемесін бөлек вкладкада ашу">
+                <img 
+                  src="images/birnarse_kitap9.jpg" 
+                  alt="AQYLDY KITAPHANA - Ою-өрнек сыры" 
+                  onerror="this.src='https://placehold.co/400x560/fce7f3/db2777?text=9-КІТАП%0A(images/birnarse_kitap9.png)';"
+                  class="book-cover-3d w-full aspect-[3/4] object-cover rounded-2xl transform group-hover:scale-105 transition duration-300"
+                >
+                <div class="absolute inset-0 bg-pink-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                  <span class="px-4 py-2 rounded-full bg-pink-400 text-slate-900 text-xs font-black shadow-lg flex items-center gap-1.5 border-2 border-white">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Кітапты ашу
+                  </span>
+                </div>
+                <span class="absolute top-3 left-3 bg-pink-400 text-slate-900 font-brand font-black text-xs px-3 py-1 rounded-full uppercase shadow-sm border border-white">
+                  🎨 ӨНЕР ЖӘНЕ ART
+                </span>
+              </a>
+
+              <div class="flex-grow">
+                <h3 class="font-brand font-black text-xl text-slate-800 hover:text-pink-600 transition mb-1">
+                  ҚҰСБЕГІ АЙҒАНЫМ
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-4 font-semibold">
+                  Кішкентай құсбегі қыз Айғаным мен оның адал досы Ақиық бүркіт туралы жүрекжарды ертегі
+                </p>
+              </div>
+
+              <div class="pt-3 border-t-2 border-slate-100 flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="https://drive.google.com/file/d/1Ka0Eeah-YuSk99IebUQWkX1ocunO0Ed7/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="px-3 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-book-open text-amber-600"></i> Оқу
+                  </a>
+                  <button onclick="openVideoModal('ҚҰСБЕГІ АЙҒАНЫМ', 'videos/birnarse9.mp4')" class="px-3 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-brand font-bold text-center flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-play text-sky-600"></i> Видео
+                  </button>
+                </div>
+                <a href="didaktikalyk_oiyn9.html" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-brand font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-200 transition transform active:scale-95 border border-white">
+                  <i class="fa-solid fa-gamepad text-sm"></i> Дидактикалық ойын ойнау
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Тәрбиешілер мен ата-аналарға арналған нұсқаулық -->
+      <section class="py-12 bg-white/70 border-t-2 border-amber-200">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 text-center">
+          <div class="inline-flex items-center gap-2 text-amber-700 font-sub font-black text-sm mb-3">
+            <span class="text-lg">🧸</span> Әдістемелік көмекші
+          </div>
+          <h3 class="text-2xl sm:text-3xl font-brand font-black text-slate-800 mb-6">Баламен қалай жұмыс істейміз?</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+            <div class="bg-amber-50/80 p-5 rounded-3xl border-2 border-amber-200 shadow-sm">
+              <div class="text-amber-800 font-brand font-black text-lg mb-2">1. Кітапты оқу 📖</div>
+              <p class="text-xs sm:text-sm text-slate-600 font-semibold">Мұқабаны немесе «Оқу» батырмасын басып, кітапты жаңа терезеде бүлдіршінге ашып беріңіз.</p>
+            </div>
+            <div class="bg-sky-50/80 p-5 rounded-3xl border-2 border-sky-200 shadow-sm">
+              <div class="text-sky-800 font-brand font-black text-lg mb-2">2. Видеоны көру 🎬</div>
+              <p class="text-xs sm:text-sm text-slate-600 font-semibold">«Видео» батырмасымен кітап кейіпкерлерін көріп, мазмұнды бейне арқылы бекітіңіз.</p>
+            </div>
+            <div class="bg-emerald-50/80 p-5 rounded-3xl border-2 border-emerald-200 shadow-sm">
+              <div class="text-emerald-800 font-brand font-black text-lg mb-2">3. Ойын ойнау 🎮</div>
+              <p class="text-xs sm:text-sm text-slate-600 font-semibold">«Дидактикалық ойын» батырмасы баланың ой-қиялы мен танымын дамытатын жаттығуларды ашады.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Төменгі колонтитул (Footer) -->
+    <footer class="bg-white border-t-4 border-amber-300 py-6 px-4 text-center text-xs text-slate-500">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 font-bold">
+        <div class="flex items-center gap-2">
+          <span class="font-brand font-black text-base text-amber-600">AQYLDY KITAPHANA</span>
+          <span class="text-slate-300">|</span>
+          <span class="text-slate-600">5-6 жастағы балалардың ақылды кеңістігі</span>
+        </div>
+        <p>© 2026 AI & ART Кітапханасы. Барлық құқықтар қорғалған.</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Бейнежазбаны көру модаль терезесі (Video Modal) -->
+  <div id="videoModal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white border-4 border-amber-300 rounded-[2.5rem] max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative">
+      
+      <!-- Жоғарғы жолақ -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-slate-100 mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shadow-sm">
+            🎬
+          </div>
+          <div>
+            <h4 id="videoModalTitle" class="font-brand font-black text-lg sm:text-xl text-slate-800">Кітап бейнежазбасы</h4>
+            <span class="text-xs font-bold text-amber-600">AQYLDY KITAPHANA • Мультфильм</span>
+          </div>
+        </div>
+        <button onclick="closeVideoModal()" class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-500 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Бейне ойнатқыш (birnarse.mp4) -->
+      <div class="aspect-video bg-slate-900 rounded-3xl overflow-hidden border-2 border-slate-200 shadow-inner relative flex items-center justify-center">
+        <video id="mainVideoPlayer" controls class="w-full h-full object-contain">
+          <source id="videoSource" src="videos/birnarse1.mp4" type="video/mp4">
+          Браузер видеоны қолдамайды.
+        </video>
+        <div id="videoPlaceholderNotice" class="absolute bottom-2 left-2 bg-slate-900/80 text-[11px] text-amber-300 px-3 py-1 rounded-xl backdrop-blur pointer-events-none font-bold">
+          🎬 Видео файлы: <code id="videoPathLabel">videos/birnarse1.mp4</code>
+        </div>
+      </div>
+
+      <div class="mt-4 flex justify-end">
+        <button onclick="closeVideoModal()" class="px-6 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-sm font-brand font-bold text-slate-700 transition">
+          Жабу
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JavaScript: Скролл, сүзгі және балаларға арналған дыбыстар -->
+  <script>
+    /* 1. Скролл кезінде кітаптардың шығу анимациясы (Scroll Reveal) */
+    document.addEventListener("DOMContentLoaded", () => {
+      const bookCards = document.querySelectorAll(".reveal-book");
+
+      const observerOptions = {
+        root: null,
+        rootMargin: "0px",
+        threshold: 0.15
+      };
+
+      const bookObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry, index) => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              entry.target.classList.add("active");
+            }, (index % 3) * 120);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+
+      bookCards.forEach(card => bookObserver.observe(card));
+
+      // Көңілді бөлшектерді бастау
+      initParticles();
+    });
+
+    /* 2. Бейнежазба модаль терезесі */
+    const videoModal = document.getElementById("videoModal");
+    const videoTitle = document.getElementById("videoModalTitle");
+    const videoPlayer = document.getElementById("mainVideoPlayer");
+    const videoSource = document.getElementById("videoSource");
+    const videoPathLabel = document.getElementById("videoPathLabel");
+
+    function openVideoModal(title, videoSrc) {
+      playBubbleSound();
+      videoTitle.textContent = title;
+      videoSource.src = videoSrc;
+      videoPathLabel.textContent = videoSrc;
+      videoPlayer.load();
+      videoModal.classList.remove("hidden");
+      videoModal.classList.add("flex");
+      
+      videoPlayer.play().catch(e => {
+        console.log("Видеоны қолмен қосыңыз:", e);
+      });
+    }
+
+    function closeVideoModal() {
+      videoPlayer.pause();
+      videoModal.classList.add("hidden");
+      videoModal.classList.remove("flex");
+    }
+
+    videoModal.addEventListener("click", (e) => {
+      if (e.target === videoModal) {
+        closeVideoModal();
+      }
+    });
+
+    /* 3. Кітаптарды санаттар бойынша сүзу */
+    function filterBooks(category, btnElement) {
+      playBubbleSound();
+      document.querySelectorAll(".category-btn").forEach(btn => {
+        btn.classList.remove("bg-amber-400", "text-slate-900", "border-amber-500");
+        btn.classList.add("bg-white", "text-slate-700", "border-slate-200");
+      });
+      btnElement.classList.add("bg-amber-400", "text-slate-900", "border-amber-500");
+      btnElement.classList.remove("bg-white", "text-slate-700", "border-slate-200");
+
+      const cards = document.querySelectorAll(".book-card");
+      cards.forEach(card => {
+        const cardCat = card.getAttribute("data-category");
+        if (category === "all" || cardCat === category) {
+          card.style.display = "block";
+          setTimeout(() => card.classList.add("active"), 50);
+        } else {
+          card.style.display = "none";
+          card.classList.remove("active");
+        }
+      });
+    }
+
+    /* 4. Балаларға арналған көңілді дыбыстар (Web Audio API) */
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playBubbleSound() {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(450, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.12);
+
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      } catch (err) {}
+    }
+
+    function playSparkleSound() {
+      try {
+        const ctx = getAudioContext();
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.05);
+
+          gain.gain.setValueAtTime(0.15, ctx.currentTime + idx * 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.05 + 0.2);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(ctx.currentTime + idx * 0.05);
+          osc.stop(ctx.currentTime + idx * 0.05 + 0.2);
+        });
+      } catch (err) {}
+    }
+
+    /* 5. Фондағы көңілді түрлі-түсті шарлар/жұлдыздар кенебі */
+    function initParticles() {
+      const canvas = document.getElementById("magicParticles");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+
+      let width = (canvas.width = window.innerWidth);
+      let height = (canvas.height = window.innerHeight);
+
+      window.addEventListener("resize", () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      const colors = ["#f59e0b", "#38bdf8", "#ec4899", "#10b981", "#fbbf24"];
+      const particles = [];
+      const particleCount = 35;
+
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          radius: Math.random() * 3 + 1.5,
+          speedY: Math.random() * 0.35 + 0.1,
+          speedX: (Math.random() - 0.5) * 0.25,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: Math.random() * 0.6 + 0.2
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        particles.forEach(p => {
+          p.y -= p.speedY;
+          p.x += p.speedX;
+
+          if (p.y < 0) {
+            p.y = height;
+            p.x = Math.random() * width;
+          }
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = p.alpha;
+          ctx.fill();
+        });
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    }
+  </script>
+</body>
+</html>

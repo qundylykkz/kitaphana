@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Достық — Әлемдегі ең бағалы қазына!</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700;900&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    body {
+      font-family: 'Comfortaa', 'Nunito', cursive, sans-serif;
+      overflow-x: hidden;
+      background: #73d2de;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(2deg); }
+    }
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    @keyframes bounceKey {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    @keyframes raysSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes sparkleFade {
+      0% { transform: scale(0.2) rotate(0deg); opacity: 0; }
+      50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+      100% { transform: scale(0) rotate(360deg); opacity: 0; }
+    }
+
+    .animate-float { animation: float 3.5s ease-in-out infinite; }
+    .animate-float-delayed { animation: float 3.8s ease-in-out infinite 1.5s; }
+    .animate-pulse-soft { animation: pulseSoft 2s ease-in-out infinite; }
+    .animate-bounce-key { animation: bounceKey 1.5s ease-in-out infinite; }
+    .animate-spin-slow { animation: raysSpin 25s linear infinite; }
+
+    .glow-gold {
+      filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.75));
+    }
+    .glow-silver {
+      filter: drop-shadow(0 0 16px rgba(165, 243, 252, 0.75));
+    }
+    .shadow-fun {
+      box-shadow: 0 10px 0px rgba(0, 0, 0, 0.15);
+    }
+    .shadow-fun-press:active {
+      transform: translateY(6px);
+      box-shadow: 0 4px 0px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Confetti canvas */
+    #confettiCanvas {
+      pointer-events: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none relative bg-gradient-to-b from-sky-300 via-sky-100 to-emerald-200">
+  
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- Top Navigation / Progress Header for 5-6 yo children -->
+  <header class="w-full px-4 pt-3 pb-2 z-20 flex justify-between items-center max-w-4xl mx-auto">
+    <!-- Sound button -->
+    <button id="soundToggleBtn" onclick="toggleAudio()" class="bg-amber-400 hover:bg-amber-300 border-4 border-amber-600 rounded-2xl p-2.5 shadow-fun shadow-fun-press flex items-center gap-2">
+      <svg id="soundIconOn" class="w-8 h-8 text-amber-900" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M13.5 4.06c0-1.33-1.61-2-2.55-1.06L6.83 7.12H4a2 2 0 0 0-2 2v5.76a2 2 0 0 0 2 2h2.83l4.12 4.12c.94.94 2.55.27 2.55-1.06V4.06zm4.5 7.94c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM15.5 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+      </svg>
+      <span class="font-black text-amber-950 text-base sm:text-lg">Дыбыс</span>
+    </button>
+
+    <!-- Star level progress indicator -->
+    <div class="flex items-center bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full border-4 border-amber-400 shadow-fun">
+      <div id="star1" class="text-3xl filter grayscale transition-all duration-500 scale-100">⭐</div>
+      <div class="w-4 h-1 bg-amber-200 mx-1 rounded"></div>
+      <div id="star2" class="text-3xl filter grayscale transition-all duration-500 scale-100">⭐</div>
+      <div class="w-4 h-1 bg-amber-200 mx-1 rounded"></div>
+      <div id="star3" class="text-3xl filter grayscale transition-all duration-500 scale-100">⭐</div>
+    </div>
+
+    <!-- Voice prompt helper button for custom audio -->
+    <button id="customAudioBtn" onclick="playCustomVoice()" class="bg-emerald-400 hover:bg-emerald-300 border-4 border-emerald-600 rounded-2xl p-2.5 shadow-fun shadow-fun-press flex items-center gap-1.5" title="Дауысты тыңдау">
+      <span id="speakerAnimIcon" class="text-2xl">🗣️</span>
+      <span class="font-black text-emerald-950 text-base hidden sm:inline">Тыңдау</span>
+    </button>
+  </header>
+
+  <main class="w-full flex-1 max-w-4xl mx-auto px-3 py-2 flex flex-col justify-center items-center relative z-10">
+
+    <!-- Big audio & visual prompt bubble with cute speaker icon -->
+    <div class="w-full max-w-2xl bg-white/95 border-4 border-sky-400 rounded-3xl p-3 sm:p-4 mb-3 shadow-fun text-center relative flex items-center justify-center gap-3">
+      <button onclick="playCustomVoice()" class="bg-sky-400 hover:bg-sky-500 text-white rounded-2xl p-2 shrink-0 animate-pulse-soft">
+        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+      </button>
+      <div id="taskInstructionText" class="text-lg sm:text-2xl font-black text-sky-900 leading-snug tracking-wide">
+        Айбекке асықтарды, Айсұлуға гүлдерді сыйла! 🌸
+      </div>
+    </div>
+
+    <!-- STAGE 1: Sorting Flowers & Asyqs (Сұрыптау - Гүлдер мен Асықтар) -->
+    <section id="stage1" class="w-full flex flex-col items-center">
+      
+      <!-- Characters Drop Zones (Aisulu & Aibek) -->
+      <div class="w-full grid grid-cols-2 gap-3 sm:gap-6 my-2">
+        
+        <!-- Aisulu Zone (Flower basket) -->
+        <div id="aisuluZone" onclick="handleZoneClick('flower')" class="bg-gradient-to-b from-rose-100 to-pink-200 border-4 border-dashed border-pink-400 rounded-3xl p-3 flex flex-col items-center justify-between min-h-[220px] sm:min-h-[260px] shadow-fun transition-transform active:scale-95 cursor-pointer relative overflow-hidden">
+          <div class="absolute top-2 left-2 bg-pink-500 text-white text-xs sm:text-sm font-black px-2.5 py-1 rounded-full">
+            Айсұлу 🌸
+          </div>
+          <!-- Aisulu SVG Cartoon Graphic -->
+          <div class="w-24 sm:w-32 h-28 sm:h-36 relative mt-4">
+            <svg viewBox="0 0 140 180" class="w-full h-full drop-shadow-md">
+              <!-- Kazakh traditional girl Aisulu -->
+              <!-- Body / Dress -->
+              <path d="M40 90 L100 90 L115 170 L25 170 Z" fill="#ffffff" stroke="#c026d3" stroke-width="3"/>
+              <!-- Kazakh Camisole / Vest -->
+              <path d="M40 90 L70 120 L100 90 L95 160 L45 160 Z" fill="#db2777"/>
+              <path d="M40 90 L55 160" stroke="#fef08a" stroke-width="4" stroke-dasharray="2,3"/>
+              <path d="M100 90 L85 160" stroke="#fef08a" stroke-width="4" stroke-dasharray="2,3"/>
+              <!-- Head -->
+              <circle cx="70" cy="55" r="32" fill="#ffd1b3"/>
+              <!-- Braids (Қос бұрым) -->
+              <path d="M45 60 C30 80 32 120 38 140" fill="none" stroke="#331900" stroke-width="7" stroke-linecap="round"/>
+              <circle cx="38" cy="140" r="5" fill="#f59e0b"/>
+              <path d="M95 60 C110 80 108 120 102 140" fill="none" stroke="#331900" stroke-width="7" stroke-linecap="round"/>
+              <circle cx="102" cy="140" r="5" fill="#f59e0b"/>
+              <!-- Hair bangs -->
+              <path d="M40 45 Q70 20 100 45 Q70 38 40 45" fill="#331900"/>
+              <!-- Traditional Kazakh Saukele / Skullcap (Бөрік/Тақия) -->
+              <path d="M42 42 Q70 15 98 42 Z" fill="#ec4899" stroke="#be185d" stroke-width="2"/>
+              <!-- Ornament & Feather (Үкі) -->
+              <circle cx="70" cy="30" r="5" fill="#fef08a"/>
+              <path d="M70 25 C68 10 74 5 70 0 C73 5 76 10 70 25" fill="#ffffff" stroke="#cbd5e1"/>
+              <!-- Eyes (Cute anime style) -->
+              <circle cx="58" cy="56" r="5.5" fill="#1e1b4b"/>
+              <circle cx="60" cy="54" r="2" fill="#ffffff"/>
+              <circle cx="82" cy="56" r="5.5" fill="#1e1b4b"/>
+              <circle cx="84" cy="54" r="2" fill="#ffffff"/>
+              <!-- Cheeks -->
+              <circle cx="50" cy="65" r="4" fill="#fb7185" opacity="0.6"/>
+              <circle cx="90" cy="65" r="4" fill="#fb7185" opacity="0.6"/>
+              <!-- Smile -->
+              <path d="M64 67 Q70 74 76 67" stroke="#991b1b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <!-- Basket target with counter -->
+          <div class="w-full bg-white/90 rounded-2xl p-2 border-2 border-pink-400 flex items-center justify-center gap-2">
+            <span class="text-2xl">🧺</span>
+            <span class="font-black text-pink-700 text-lg sm:text-xl">Гүлдер: <span id="flowerCount">0</span>/3</span>
+          </div>
+        </div>
+
+        <!-- Aibek Zone (Asyq bag) -->
+        <div id="aibekZone" onclick="handleZoneClick('asyq')" class="bg-gradient-to-b from-sky-100 to-blue-200 border-4 border-dashed border-blue-400 rounded-3xl p-3 flex flex-col items-center justify-between min-h-[220px] sm:min-h-[260px] shadow-fun transition-transform active:scale-95 cursor-pointer relative overflow-hidden">
+          <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs sm:text-sm font-black px-2.5 py-1 rounded-full">
+            Айбек 🎯
+          </div>
+          <!-- Aibek SVG Cartoon Graphic -->
+          <div class="w-24 sm:w-32 h-28 sm:h-36 relative mt-4">
+            <svg viewBox="0 0 140 180" class="w-full h-full drop-shadow-md">
+              <!-- Kazakh boy Aibek -->
+              <!-- Shirt & Trousers -->
+              <path d="M42 90 L98 90 L102 145 L38 145 Z" fill="#ffffff" stroke="#0284c7" stroke-width="3"/>
+              <path d="M45 145 L67 145 L67 175 L45 175 Z" fill="#78350f"/>
+              <path d="M73 145 L95 145 L95 175 L73 175 Z" fill="#78350f"/>
+              <!-- Camisole / Kazakh Shapan vest -->
+              <path d="M42 90 L70 120 L98 90 L96 145 L44 145 Z" fill="#0284c7"/>
+              <path d="M70 90 L70 145" stroke="#facc15" stroke-width="4"/>
+              <!-- Head -->
+              <circle cx="70" cy="55" r="32" fill="#ffd1b3"/>
+              <!-- Hair -->
+              <path d="M38 52 C38 30 102 30 102 52 Z" fill="#331900"/>
+              <!-- Taqiya (Түбіт тақия оюымен) -->
+              <path d="M42 45 Q70 18 98 45 Z" fill="#0369a1" stroke="#0284c7" stroke-width="2"/>
+              <path d="M50 40 Q70 28 90 40" stroke="#facc15" stroke-width="3" fill="none"/>
+              <!-- Eyes -->
+              <circle cx="58" cy="56" r="5" fill="#1e1b4b"/>
+              <circle cx="60" cy="54" r="1.8" fill="#ffffff"/>
+              <circle cx="82" cy="56" r="5" fill="#1e1b4b"/>
+              <circle cx="84" cy="54" r="1.8" fill="#ffffff"/>
+              <!-- Cute cheeks & Smile -->
+              <circle cx="50" cy="65" r="4" fill="#fb7185" opacity="0.6"/>
+              <circle cx="90" cy="65" r="4" fill="#fb7185" opacity="0.6"/>
+              <path d="M63 67 Q70 75 77 67" stroke="#991b1b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <!-- Asyq bag counter -->
+          <div class="w-full bg-white/90 rounded-2xl p-2 border-2 border-blue-400 flex items-center justify-center gap-2">
+            <span class="text-2xl">🎒</span>
+            <span class="font-black text-blue-700 text-lg sm:text-xl">Асықтар: <span id="asyqCount">0</span>/3</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Items pool to collect (Flowers & Asyqs) -->
+      <div class="w-full bg-emerald-300/80 border-4 border-emerald-500 rounded-3xl p-3 sm:p-4 shadow-fun">
+        <div class="text-center font-black text-emerald-950 text-sm sm:text-base mb-2">
+          👇 Затты бас та, иесіне сыйла! (Басу немесе сүйреу)
+        </div>
+        <div id="itemsContainer" class="flex flex-wrap justify-center items-center gap-3 sm:gap-5 min-h-[90px]">
+          <!-- Interactive items injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 2: Open Magic Chest with Sun & Moon Keys (Сандық пен кілттер) -->
+    <section id="stage2" class="w-full hidden flex-col items-center">
+      
+      <!-- Big Golden Kazakh Chest (Сандық) Area -->
+      <div class="relative w-full max-w-md my-2 flex flex-col items-center">
+        
+        <!-- Magic shine glow background -->
+        <div id="chestGlow" class="absolute -inset-4 bg-yellow-300/30 rounded-full blur-2xl opacity-0 transition-opacity duration-700"></div>
+
+        <!-- SVG Sandıq Graphic -->
+        <div class="w-64 sm:w-80 h-52 sm:h-64 relative">
+          <svg viewBox="0 0 320 260" class="w-full h-full drop-shadow-2xl">
+            <defs>
+              <linearGradient id="goldChest" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#b45309" />
+                <stop offset="50%" stop-color="#d97706" />
+                <stop offset="100%" stop-color="#78350f" />
+              </linearGradient>
+              <linearGradient id="metalBand" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#fef08a" />
+                <stop offset="50%" stop-color="#f59e0b" />
+                <stop offset="100%" stop-color="#b45309" />
+              </linearGradient>
+            </defs>
+            <!-- Chest Body -->
+            <rect x="30" y="90" width="260" height="150" rx="16" fill="url(#goldChest)" stroke="#451a03" stroke-width="4"/>
+            <!-- Traditional Kazakh Ornament on Chest -->
+            <path d="M60 165 Q80 135 110 165 Q80 195 60 165 Z" fill="#fbbf24"/>
+            <path d="M260 165 Q240 135 210 165 Q240 195 260 165 Z" fill="#fbbf24"/>
+            <circle cx="160" cy="165" r="35" fill="#451a03" stroke="#f59e0b" stroke-width="3"/>
+            <!-- Metal bands & studs -->
+            <rect x="50" y="90" width="20" height="150" fill="url(#metalBand)"/>
+            <rect x="250" y="90" width="20" height="150" fill="url(#metalBand)"/>
+            <circle cx="60" cy="115" r="4" fill="#451a03"/>
+            <circle cx="60" cy="165" r="4" fill="#451a03"/>
+            <circle cx="60" cy="215" r="4" fill="#451a03"/>
+            <circle cx="260" cy="115" r="4" fill="#451a03"/>
+            <circle cx="260" cy="165" r="4" fill="#451a03"/>
+            <circle cx="260" cy="215" r="4" fill="#451a03"/>
+
+            <!-- Chest Lid (Opens in animation) -->
+            <g id="chestLid" class="transition-all duration-1000 origin-[160px_90px]">
+              <path d="M20 90 Q160 25 300 90 Z" fill="#b45309" stroke="#451a03" stroke-width="4"/>
+              <path d="M35 88 Q160 38 285 88" stroke="url(#metalBand)" stroke-width="12" fill="none"/>
+              <circle cx="160" cy="55" r="14" fill="#fbbf24" stroke="#78350f" stroke-width="3"/>
+            </g>
+
+            <!-- Keyhole 1: SUN LOCK (For Aisulu) -->
+            <g id="sunHole" onclick="tryInsertKey('sun')" class="cursor-pointer">
+              <circle cx="130" cy="165" r="20" fill="#1e293b" stroke="#fbbf24" stroke-width="3"/>
+              <!-- Mini Sun icon inside -->
+              <path d="M130 155 L130 150 M130 175 L130 180 M120 165 L115 165 M140 165 L145 165" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="130" cy="165" r="6" fill="#fbbf24"/>
+            </g>
+
+            <!-- Keyhole 2: MOON LOCK (For Aibek) -->
+            <g id="moonHole" onclick="tryInsertKey('moon')" class="cursor-pointer">
+              <circle cx="190" cy="165" r="20" fill="#1e293b" stroke="#38bdf8" stroke-width="3"/>
+              <!-- Mini Moon icon inside -->
+              <path d="M193 158 A7 7 0 1 1 185 170 A9 9 0 0 0 193 158 Z" fill="#38bdf8"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="mt-2 text-center text-amber-950 font-black text-sm sm:text-base bg-amber-100/90 px-4 py-1.5 rounded-full border-2 border-amber-400">
+          🔒 Сандықта екі құлып бар: Күн ☀️ және Ай 🌙
+        </div>
+      </div>
+
+      <div class="w-full flex justify-center items-center gap-6 sm:gap-12 mt-3">
+        
+        <!-- Sun Key (Айсұлудың Күн кілті) -->
+        <button id="sunKeyBtn" onclick="selectOrUseKey('sun')" class="flex flex-col items-center bg-white/90 hover:bg-yellow-50 border-4 border-amber-400 p-3 rounded-3xl shadow-fun shadow-fun-press animate-bounce-key group">
+          <div class="w-20 h-20 sm:w-24 sm:h-24 glow-gold">
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <!-- Sun Key Head -->
+              <circle cx="50" cy="35" r="16" fill="#facc15" stroke="#b45309" stroke-width="3"/>
+              <!-- Sun rays -->
+              <g stroke="#f59e0b" stroke-width="4" stroke-linecap="round">
+                <line x1="50" y1="12" x2="50" y2="6"/>
+                <line x1="50" y1="58" x2="50" y2="64"/>
+                <line x1="27" y1="35" x2="21" y2="35"/>
+                <line x1="73" y1="35" x2="79" y2="35"/>
+                <line x1="34" y1="19" x2="30" y2="15"/>
+                <line x1="66" y1="51" x2="70" y2="55"/>
+                <line x1="34" y1="51" x2="30" y2="55"/>
+                <line x1="66" y1="19" x2="70" y2="15"/>
+              </g>
+              <circle cx="50" cy="35" r="8" fill="#fbbf24"/>
+              <!-- Key Stem & Teeth -->
+              <rect x="47" y="50" width="6" height="42" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" rx="2"/>
+              <rect x="53" y="75" width="12" height="5" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" rx="1"/>
+              <rect x="53" y="85" width="8" height="5" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" rx="1"/>
+            </svg>
+          </div>
+          <span class="mt-1 font-black text-amber-900 text-sm sm:text-base">☀️ Күн кілті</span>
+          <span class="text-xs text-pink-600 font-bold">(Айсұлу)</span>
+        </button>
+
+        <!-- Moon Key (Айбектің Ай кілті) -->
+        <button id="moonKeyBtn" onclick="selectOrUseKey('moon')" class="flex flex-col items-center bg-white/90 hover:bg-sky-50 border-4 border-cyan-400 p-3 rounded-3xl shadow-fun shadow-fun-press animate-bounce-key group">
+          <div class="w-20 h-20 sm:w-24 sm:h-24 glow-silver">
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <!-- Moon Key Head -->
+              <path d="M62 20 A22 22 0 1 1 36 54 A27 27 0 0 0 62 20 Z" fill="#38bdf8" stroke="#0369a1" stroke-width="3"/>
+              <!-- Stars ornament inside -->
+              <circle cx="48" cy="38" r="3" fill="#ffffff"/>
+              <!-- Key Stem & Teeth -->
+              <rect x="47" y="52" width="6" height="40" fill="#0284c7" stroke="#0369a1" stroke-width="1.5" rx="2"/>
+              <rect x="35" y="75" width="12" height="5" fill="#0284c7" stroke="#0369a1" stroke-width="1.5" rx="1"/>
+              <rect x="39" y="85" width="8" height="5" fill="#0284c7" stroke="#0369a1" stroke-width="1.5" rx="1"/>
+            </svg>
+          </div>
+          <span class="mt-1 font-black text-cyan-900 text-sm sm:text-base">🌙 Ай кілті</span>
+          <span class="text-xs text-blue-600 font-bold">(Айбек)</span>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- STAGE 3: Fair Sharing (Тәтті бауырсақтарды тең бөлісу) -->
+    <section id="stage3" class="w-full hidden flex-col items-center">
+      
+      <!-- Baursaks Treasure Tray -->
+      <div class="w-full bg-amber-200/90 border-4 border-amber-500 rounded-3xl p-3 sm:p-4 mb-4 shadow-fun flex flex-col items-center">
+        <div class="flex items-center gap-2 mb-2 font-black text-amber-950 text-base sm:text-lg">
+          <span>✨ Сандықтан шыққан бауырсақтар:</span>
+          <span id="remainingBaursaks" class="bg-amber-600 text-white px-3 py-0.5 rounded-full text-lg">6</span>
+        </div>
+        
+        <div id="baursakTray" class="flex flex-wrap justify-center gap-3 sm:gap-6 min-h-[70px] p-2">
+          <!-- 6 Baursaks rendered via code -->
+        </div>
+      </div>
+
+      <!-- Plates for Aisulu and Aibek -->
+      <div class="w-full grid grid-cols-2 gap-4">
+        
+        <!-- Aisulu Plate -->
+        <div onclick="giveBaursakTo('aisulu')" class="bg-gradient-to-b from-rose-50 to-pink-100 border-4 border-dashed border-pink-400 rounded-3xl p-3 flex flex-col items-center min-h-[190px] shadow-fun cursor-pointer hover:bg-pink-100 transition active:scale-95">
+          <div class="font-black text-pink-700 text-base sm:text-lg mb-1 flex items-center gap-1">
+            <span>👧 Айсұлудың тәрелкесі</span>
+          </div>
+          <!-- Big Plate Graphic -->
+          <div class="w-full flex-1 flex items-center justify-center">
+            <div id="aisuluPlate" class="w-32 sm:w-40 h-28 sm:h-32 bg-white rounded-full border-4 border-pink-300 shadow-inner flex flex-wrap items-center justify-center p-2 gap-1.5 transition-all">
+              <!-- Placed baursaks go here -->
+            </div>
+          </div>
+          <div class="mt-2 bg-pink-500 text-white px-3 py-0.5 rounded-full font-black text-sm">
+            Үлесі: <span id="aisuluShareCount">0</span>
+          </div>
+        </div>
+
+        <!-- Aibek Plate -->
+        <div onclick="giveBaursakTo('aibek')" class="bg-gradient-to-b from-sky-50 to-blue-100 border-4 border-dashed border-blue-400 rounded-3xl p-3 flex flex-col items-center min-h-[190px] shadow-fun cursor-pointer hover:bg-blue-100 transition active:scale-95">
+          <div class="font-black text-blue-700 text-base sm:text-lg mb-1 flex items-center gap-1">
+            <span>👦 Айбектің тәрелкесі</span>
+          </div>
+          <!-- Big Plate Graphic -->
+          <div class="w-full flex-1 flex items-center justify-center">
+            <div id="aibekPlate" class="w-32 sm:w-40 h-28 sm:h-32 bg-white rounded-full border-4 border-blue-300 shadow-inner flex flex-wrap items-center justify-center p-2 gap-1.5 transition-all">
+              <!-- Placed baursaks go here -->
+            </div>
+          </div>
+          <div class="mt-2 bg-blue-600 text-white px-3 py-0.5 rounded-full font-black text-sm">
+            Үлесі: <span id="aibekShareCount">0</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Equality indicator prompt -->
+      <div id="balanceFeedback" class="mt-3 text-center font-black text-sm sm:text-base text-amber-900 bg-white/90 px-4 py-1.5 rounded-full border-2 border-amber-300">
+        «Кел, екеуміз теңдей бөлісіп жейік!» 🤝
+      </div>
+    </section>
+
+    <!-- STAGE 4: Friendship Victory Celebration (Достық тойы мен киіз үй) -->
+    <section id="stage4" class="w-full hidden flex-col items-center text-center">
+      
+      <!-- Big Celebration Banner with Kazakh Yurt Graphic -->
+      <div class="w-full max-w-xl bg-white/95 border-4 border-amber-400 rounded-3xl p-4 sm:p-6 shadow-fun flex flex-col items-center relative overflow-hidden">
+        
+        <!-- Yurt & Kazakh Landscape SVG -->
+        <div class="w-48 sm:w-64 h-36 sm:h-44 relative my-1">
+          <svg viewBox="0 0 200 150" class="w-full h-full drop-shadow-md">
+            <!-- Mountains -->
+            <polygon points="10,130 50,70 90,130" fill="#93c5fd" opacity="0.6"/>
+            <polygon points="70,130 130,50 190,130" fill="#60a5fa" opacity="0.7"/>
+            <!-- Sun -->
+            <circle cx="160" cy="35" r="18" fill="#facc15"/>
+            <!-- Kazakh Yurt (Киіз үй) -->
+            <!-- Wall (Кереге) -->
+            <rect x="40" y="85" width="120" height="50" rx="6" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+            <!-- Roof dome (Үзік) -->
+            <path d="M30 88 Q100 35 170 88 Z" fill="#fffbeb" stroke="#b45309" stroke-width="3"/>
+            <!-- Shanyraq (Шаңырақ) -->
+            <ellipse cx="100" cy="48" rx="20" ry="8" fill="#b45309"/>
+            <ellipse cx="100" cy="48" rx="16" ry="6" fill="#fef3c7"/>
+            <line x1="84" y1="48" x2="116" y2="48" stroke="#b45309" stroke-width="2"/>
+            <line x1="100" y1="42" x2="100" y2="54" stroke="#b45309" stroke-width="2"/>
+            <!-- Door (Есік) -->
+            <path d="M88 95 Q100 88 112 95 L112 135 L88 135 Z" fill="#92400e"/>
+            <!-- Traditional ribbon belts (Басқұр) -->
+            <path d="M35 88 Q100 45 165 88" stroke="#dc2626" stroke-width="4" fill="none"/>
+            <path d="M40 105 L160 105" stroke="#2563eb" stroke-width="4"/>
+          </svg>
+        </div>
+
+        <div class="text-3xl sm:text-4xl font-black text-amber-600 mb-1">
+          🎉 ЖАРАЙСЫҢ! 🎉
+        </div>
+        <div class="text-xl sm:text-2xl font-black text-emerald-800 mb-2">
+          «Ең үлкен қазына — адал достық пен бірлік!»
+        </div>
+
+        <p class="text-sm sm:text-base text-gray-700 font-bold max-w-md mb-4">
+          Айбек пен Айсұлу нағыз дос! Олар бірге сандықты ашып, тәттіні тең бөлісті. Сен де адал дос бола білдің!
+        </p>
+
+        <!-- Big replay button -->
+        <button onclick="restartGame()" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-black text-xl sm:text-2xl px-8 py-3.5 rounded-3xl border-4 border-amber-600 shadow-fun shadow-fun-press flex items-center gap-3">
+          <span>🔄</span>
+          <span>Қайта ойнау!</span>
+        </button>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="w-full relative pointer-events-none z-0">
+    <div class="w-full h-14 sm:h-20 bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-3xl relative overflow-hidden flex items-end justify-around px-4 pb-2">
+      <!-- Flowers in grass -->
+      <span class="text-2xl sm:text-3xl animate-bounce-key">🌷</span>
+      <span class="text-2xl sm:text-3xl animate-float">🌼</span>
+      <span class="text-xl sm:text-2xl">🌱</span>
+      <span class="text-2xl sm:text-3xl animate-float-delayed">🌸</span>
+      <span class="text-2xl sm:text-3xl animate-bounce-key">🌺</span>
+    </div>
+  </footer>
+
+  <!-- Notification Banner Modal (for encouraging voice/visual hints without annoying alerts) -->
+  <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 bg-amber-500 text-white font-black text-base sm:text-xl px-6 py-2.5 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2 border-2 border-white">
+    <span id="toastIcon">⭐</span>
+    <span id="toastText">Керемет!</span>
+  </div>
+
+  <!-- Hidden HTML5 Audio Element for Custom Recordings -->
+  <audio id="customAudioPlayer" preload="auto"></audio>
+
+  <script>
+    // Audio Context synthesized sound effects (for clicks, pop, success sounds)
+    let audioCtx = null;
+    let isSoundMuted = false;
+
+    /*
+     * МҰНДА ӨЗ АУДИО ФАЙЛДАРЫҢЫЗДЫҢ СІЛТЕМЕСІН НЕМЕСЕ ФАЙЛ АТЫН ЖАЗЫҢЫЗ:
+     * Мысалы: 1: "audio/stage1.mp3", немесе интернеттегі тікелей mp3 сілтемесі.
+     */
+    const customAudioSources = {
+      1: "audio/kitap1_audio1.mp3", // 1-тапсырманың аудиосы (Гүлдер мен асықтар)
+      2: "audio/kitap1_audio2.mp3", // 2-тапсырманың аудиосы (Күн мен Ай кілттері, сандық)
+      3: "audio/kitap1_audio3.mp3", // 3-тапсырманың аудиосы (Бауырсақтарды тең бөлісу)
+      4: "audio/kitap1_audio4.mp3"  // 4-кезең (Жеңіс, мадақтау сөзі)
+    };
+
+    const audioElement = document.getElementById('customAudioPlayer');
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Play friendly sound effects using native Web Audio Synthesizer
+    function playBeep(type) {
+      if (isSoundMuted) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'pop') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } else if (type === 'correct') {
+          // Cheerful chime
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.08);
+          osc.frequency.setValueAtTime(783.99, now + 0.16);
+          osc.frequency.setValueAtTime(1046.50, now + 0.24);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        } else if (type === 'unlock') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.linearRampToValueAtTime(440, now + 0.3);
+          osc.frequency.exponentialRampToValueAtTime(1200, now + 0.7);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+          osc.start(now);
+          osc.stop(now + 0.8);
+        } else if (type === 'fanfare') {
+          const notes = [523, 659, 783, 1046];
+          notes.forEach((freq, idx) => {
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = 'triangle';
+            o.frequency.value = freq;
+            o.connect(g);
+            g.connect(ctx.destination);
+            const startTime = now + idx * 0.12;
+            g.gain.setValueAtTime(0.25, startTime);
+            g.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+            o.start(startTime);
+            o.stop(startTime + 0.4);
+          });
+        }
+      } catch (e) {
+        console.warn('Audio not available', e);
+      }
+    }
+
+    // Play Custom Voice / Audio Recording
+    function playCustomVoice() {
+      if (isSoundMuted) return;
+
+      const currentAudioSrc = customAudioSources[gameState.currentStage];
+      const speakerIcon = document.getElementById('speakerAnimIcon');
+
+      if (currentAudioSrc && currentAudioSrc.trim() !== '') {
+        try {
+          audioElement.src = currentAudioSrc;
+          audioElement.play();
+          speakerIcon.classList.add('animate-bounce');
+          audioElement.onended = () => {
+            speakerIcon.classList.remove('animate-bounce');
+          };
+          audioElement.onerror = () => {
+            speakerIcon.classList.remove('animate-bounce');
+            showToast("Аудио файл табылмады!", "⚠️");
+          };
+        } catch (e) {
+          console.error("Audio playback error:", e);
+        }
+      } else {
+        // If file is not yet linked, visual feedback for the teacher/parent
+        playBeep('pop');
+        showToast("Өз аудиоңызды қою үшін кодтағы сілтемені толтырыңыз 🎤", "🎙️");
+      }
+    }
+
+    function toggleAudio() {
+      isSoundMuted = !isSoundMuted;
+      const icon = document.getElementById('soundIconOn');
+      if (isSoundMuted) {
+        icon.classList.add('opacity-40');
+        if (!audioElement.paused) {
+          audioElement.pause();
+        }
+        showToast('🔇 Дыбыс өшірілді', 'info');
+      } else {
+        icon.classList.remove('opacity-40');
+        showToast('🔊 Дыбыс қосылды', 'info');
+        playBeep('pop');
+      }
+    }
+
+    const gameState = {
+      currentStage: 1,
+      // Stage 1
+      collectedFlowers: 0,
+      collectedAsyqs: 0,
+      targetCount: 3,
+      selectedItemType: null,
+      selectedItemElem: null,
+      // Stage 2
+      selectedKey: null,
+      sunKeyInserted: false,
+      moonKeyInserted: false,
+      // Stage 3
+      remainingBaursaks: 6,
+      aisuluBaursaks: 0,
+      aibekBaursaks: 0,
+      selectedBaursak: null
+    };
+
+    function updateStars() {
+      const s1 = document.getElementById('star1');
+      const s2 = document.getElementById('star2');
+      const s3 = document.getElementById('star3');
+      
+      if (gameState.currentStage > 1) {
+        s1.classList.remove('grayscale');
+        s1.classList.add('scale-125');
+      }
+      if (gameState.currentStage > 2) {
+        s2.classList.remove('grayscale');
+        s2.classList.add('scale-125');
+      }
+      if (gameState.currentStage > 3) {
+        s3.classList.remove('grayscale');
+        s3.classList.add('scale-125');
+      }
+    }
+
+    function showToast(msg, icon = '⭐') {
+      const toast = document.getElementById('toast');
+      const toastText = document.getElementById('toastText');
+      const toastIcon = document.getElementById('toastIcon');
+      toastText.innerText = msg;
+      toastIcon.innerText = icon;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100', '-translate-y-2');
+      setTimeout(() => {
+        toast.classList.add('opacity-0');
+        toast.classList.remove('opacity-100', '-translate-y-2');
+      }, 1800);
+    }
+
+    const stage1Items = [
+      { id: 'f1', type: 'flower', name: 'Қызғалдақ', icon: '🌸' },
+      { id: 'a1', type: 'asyq', name: 'Асық', icon: '🎲' },
+      { id: 'f2', type: 'flower', name: 'Бәйшешек', icon: '🌷' },
+      { id: 'a2', type: 'asyq', name: 'Сақа асық', icon: '🎯' },
+      { id: 'f3', type: 'flower', name: 'Түймедақ', icon: '🌼' },
+      { id: 'a3', type: 'asyq', name: 'Қызыл асық', icon: '🎲' }
+    ];
+
+    function initStage1() {
+      gameState.collectedFlowers = 0;
+      gameState.collectedAsyqs = 0;
+      gameState.selectedItemType = null;
+      gameState.selectedItemElem = null;
+      document.getElementById('flowerCount').innerText = '0';
+      document.getElementById('asyqCount').innerText = '0';
+
+      const container = document.getElementById('itemsContainer');
+      container.innerHTML = '';
+
+      // Shuffle items for fun
+      const shuffled = [...stage1Items].sort(() => Math.random() - 0.5);
+
+      shuffled.forEach(item => {
+        const btn = document.createElement('button');
+        btn.id = item.id;
+        btn.className = "w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl border-4 border-amber-400 flex flex-col items-center justify-center text-3xl sm:text-4xl shadow-fun shadow-fun-press transition-all duration-200 cursor-pointer active:scale-90 hover:scale-105";
+        btn.innerHTML = `<span>${item.icon}</span>`;
+        
+        btn.onclick = () => selectItem(item, btn);
+        container.appendChild(btn);
+      });
+
+      document.getElementById('taskInstructionText').innerHTML = 'Айбекке асықтарды 🎯, Айсұлуға гүлдерді 🌸 сыйла!';
+    }
+
+    function selectItem(item, elem) {
+      playBeep('pop');
+      // Highlight selected
+      if (gameState.selectedItemElem) {
+        gameState.selectedItemElem.classList.remove('ring-4', 'ring-pink-500', 'scale-110');
+      }
+      gameState.selectedItemType = item.type;
+      gameState.selectedItemElem = elem;
+      elem.classList.add('ring-4', 'ring-pink-500', 'scale-110');
+      showToast(item.type === 'flower' ? "Айсұлудың себетін бас! 🧺" : "Айбектің дорбасын бас! 🎒", "👉");
+    }
+
+    function handleZoneClick(zoneType) {
+      if (!gameState.selectedItemElem) {
+        showToast("Алдымен затты таңдаңыз! 🌸 🎯", "👆");
+        return;
+      }
+
+      if (gameState.selectedItemType === zoneType) {
+        // Correct match!
+        playBeep('correct');
+        const elem = gameState.selectedItemElem;
+        elem.classList.add('scale-0', 'opacity-0');
+        setTimeout(() => elem.remove(), 250);
+
+        if (zoneType === 'flower') {
+          gameState.collectedFlowers++;
+          document.getElementById('flowerCount').innerText = gameState.collectedFlowers;
+          showToast("Айсұлуға гүл сыйланды! Рақмет! 🌸", "💖");
+        } else {
+          gameState.collectedAsyqs++;
+          document.getElementById('asyqCount').innerText = gameState.collectedAsyqs;
+          showToast("Айбек асықты қуана алды! 🎯", "👍");
+        }
+
+        gameState.selectedItemElem = null;
+        gameState.selectedItemType = null;
+
+        // Check if stage 1 is complete
+        if (gameState.collectedFlowers === 3 && gameState.collectedAsyqs === 3) {
+          setTimeout(() => {
+            playBeep('fanfare');
+            showToast("Керемет! Сандыққа жақындадық! 🎁", "⭐");
+            goToStage(2);
+          }, 800);
+        }
+      } else {
+        // Mismatch feedback
+        playBeep('pop');
+        showToast(zoneType === 'flower' ? "Бұл Айсұлудың гүлі емес, асық! 😊" : "Бұл Айбектің асығы емес, гүл! 🌸", "💡");
+      }
+    }
+
+    function goToStage(num) {
+      gameState.currentStage = num;
+      updateStars();
+
+      // Hide all stages
+      document.getElementById('stage1').classList.add('hidden');
+      document.getElementById('stage2').classList.add('hidden');
+      document.getElementById('stage3').classList.add('hidden');
+      document.getElementById('stage4').classList.add('hidden');
+
+      if (num === 2) {
+        document.getElementById('stage2').classList.remove('hidden');
+        document.getElementById('stage2').classList.add('flex');
+        initStage2();
+      } else if (num === 3) {
+        document.getElementById('stage3').classList.remove('hidden');
+        document.getElementById('stage3').classList.add('flex');
+        initStage3();
+      } else if (num === 4) {
+        document.getElementById('stage4').classList.remove('hidden');
+        document.getElementById('stage4').classList.add('flex');
+        initStage4();
+      }
+    }
+
+    function initStage2() {
+      gameState.sunKeyInserted = false;
+      gameState.moonKeyInserted = false;
+      gameState.selectedKey = null;
+
+      document.getElementById('taskInstructionText').innerHTML = 'Күн кілті ☀️ мен Ай кілтін 🌙 сандыққа сал!';
+      document.getElementById('chestGlow').classList.remove('opacity-100');
+      document.getElementById('chestLid').style.transform = 'rotate(0deg)';
+    }
+
+    function selectOrUseKey(keyType) {
+      playBeep('pop');
+      gameState.selectedKey = keyType;
+      
+      const sunBtn = document.getElementById('sunKeyBtn');
+      const moonBtn = document.getElementById('moonKeyBtn');
+
+      if (keyType === 'sun') {
+        sunBtn.classList.add('ring-4', 'ring-amber-500', 'scale-105');
+        moonBtn.classList.remove('ring-4', 'ring-cyan-500', 'scale-105');
+        showToast("Күн кілті таңдалды! Күн құлпына сал ☀️", "🔑");
+      } else {
+        moonBtn.classList.add('ring-4', 'ring-cyan-500', 'scale-105');
+        sunBtn.classList.remove('ring-4', 'ring-amber-500', 'scale-105');
+        showToast("Ай кілті таңдалды! Ай құлпына сал 🌙", "🔑");
+      }
+    }
+
+    function tryInsertKey(lockHoleType) {
+      if (!gameState.selectedKey) {
+        showToast("Алдымен кілтті таңдаңыз! ☀️️ немесе 🌙", "👇");
+        return;
+      }
+
+      if (gameState.selectedKey === lockHoleType) {
+        playBeep('correct');
+        if (lockHoleType === 'sun') {
+          gameState.sunKeyInserted = true;
+          document.getElementById('sunKeyBtn').classList.add('opacity-30', 'pointer-events-none');
+          document.getElementById('sunKeyBtn').classList.remove('ring-4', 'scale-105');
+          document.getElementById('sunHole').innerHTML = `
+            <circle cx="130" cy="165" r="20" fill="#facc15" stroke="#b45309" stroke-width="3"/>
+            <text x="130" y="172" font-size="18" text-anchor="middle" fill="#78350f">☀️</text>
+          `;
+          showToast("Күн кілті орнына түсті! ☀️", "✨");
+        } else {
+          gameState.moonKeyInserted = true;
+          document.getElementById('moonKeyBtn').classList.add('opacity-30', 'pointer-events-none');
+          document.getElementById('moonKeyBtn').classList.remove('ring-4', 'scale-105');
+          document.getElementById('moonHole').innerHTML = `
+            <circle cx="190" cy="165" r="20" fill="#38bdf8" stroke="#0369a1" stroke-width="3"/>
+            <text x="190" y="172" font-size="18" text-anchor="middle" fill="#0c4a6e">🌙</text>
+          `;
+          showToast("Ай кілті орнына түсті! 🌙", "✨");
+        }
+
+        gameState.selectedKey = null;
+
+        // When both keys are inserted, chest opens with sound and animation!
+        if (gameState.sunKeyInserted && gameState.moonKeyInserted) {
+          setTimeout(() => {
+            playBeep('unlock');
+            document.getElementById('chestGlow').classList.add('opacity-100');
+            document.getElementById('chestLid').style.transform = 'rotate(-38deg) translateY(-20px)';
+            showToast("«Екі дос бірге бұрағанда, сандық сықырлап ашылды!» 🎊", "✨");
+            setTimeout(() => {
+              goToStage(3);
+            }, 1800);
+          }, 600);
+        }
+      } else {
+        playBeep('pop');
+        showToast(lockHoleType === 'sun' ? "Бұл Күннің ұясы ☀️, Ай кілті сыймайды!" : "Бұл Айдың ұясы 🌙, Күн кілті сыймайды!", "❌");
+      }
+    }
+
+    function initStage3() {
+      gameState.remainingBaursaks = 6;
+      gameState.aisuluBaursaks = 0;
+      gameState.aibekBaursaks = 0;
+      gameState.selectedBaursak = null;
+
+      document.getElementById('remainingBaursaks').innerText = '6';
+      document.getElementById('aisuluShareCount').innerText = '0';
+      document.getElementById('aibekShareCount').innerText = '0';
+      document.getElementById('aisuluPlate').innerHTML = '';
+      document.getElementById('aibekPlate').innerHTML = '';
+
+      const tray = document.getElementById('baursakTray');
+      tray.innerHTML = '';
+
+      for (let i = 1; i <= 6; i++) {
+        const b = document.createElement('button');
+        b.id = `baursak_${i}`;
+        b.className = "w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-200 rounded-full border-4 border-amber-700 shadow-fun shadow-fun-press flex items-center justify-center text-xl sm:text-2xl cursor-pointer active:scale-90 hover:scale-105 transition-all";
+        b.innerHTML = '🥯';
+        b.onclick = () => selectBaursak(b);
+        tray.appendChild(b);
+      }
+
+      document.getElementById('taskInstructionText').innerHTML = 'Тәтті бауырсақтарды екі досқа теңдей бөл! (3 және 3) 🥯';
+    }
+
+    function selectBaursak(elem) {
+      playBeep('pop');
+      if (gameState.selectedBaursak) {
+        gameState.selectedBaursak.classList.remove('ring-4', 'ring-red-500', 'scale-110');
+      }
+      gameState.selectedBaursak = elem;
+      elem.classList.add('ring-4', 'ring-red-500', 'scale-110');
+      showToast("Тәрелкені бас та, бауырсақты сал! 🍽️", "👉");
+    }
+
+    function giveBaursakTo(friend) {
+      if (!gameState.selectedBaursak) {
+        showToast("Алдымен бауырсақты таңдаңыз! 🥯", "👆");
+        return;
+      }
+
+      playBeep('correct');
+      const bElem = gameState.selectedBaursak;
+      bElem.remove();
+      gameState.selectedBaursak = null;
+      gameState.remainingBaursaks--;
+      document.getElementById('remainingBaursaks').innerText = gameState.remainingBaursaks;
+
+      // Add mini baursak graphic to plate
+      const miniB = document.createElement('div');
+      miniB.className = "w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-tr from-amber-600 to-yellow-300 rounded-full border-2 border-amber-800 flex items-center justify-center text-sm shadow animate-pulse-soft";
+      miniB.innerHTML = '🥯';
+
+      if (friend === 'aisulu') {
+        gameState.aisuluBaursaks++;
+        document.getElementById('aisuluShareCount').innerText = gameState.aisuluBaursaks;
+        document.getElementById('aisuluPlate').appendChild(miniB);
+      } else {
+        gameState.aibekBaursaks++;
+        document.getElementById('aibekShareCount').innerText = gameState.aibekBaursaks;
+        document.getElementById('aibekPlate').appendChild(miniB);
+      }
+
+      // Check balance progress
+      const bal = document.getElementById('balanceFeedback');
+      if (gameState.remainingBaursaks === 0) {
+        if (gameState.aisuluBaursaks === 3 && gameState.aibekBaursaks === 3) {
+          bal.innerText = "«Кел, екеуміз теңдей бөлісіп жейік!» — ТЕҢ БӨЛІНДІ! 💖";
+          setTimeout(() => {
+            playBeep('fanfare');
+            goToStage(4);
+          }, 900);
+        } else {
+          bal.innerText = "Қайтадан бөл! Екеуінде де 3 бауырсақтан болуы керек! 😊";
+          showToast("Тең болуы үшін қайта бөл! (3 және 3)", "🔄");
+          setTimeout(() => initStage3(), 1500);
+        }
+      }
+    }
+
+    function initStage4() {
+      document.getElementById('taskInstructionText').innerHTML = 'Құттықтаймыз! Достық жеңіске жетті! 🌟';
+      startConfetti();
+    }
+
+    function restartGame() {
+      playBeep('pop');
+      stopConfetti();
+      goToStage(1);
+      initStage1();
+    }
+
+    let confettiAnimationId = null;
+    const confettiColors = ['#f59e0b', '#ec4899', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444'];
+    let particles = [];
+
+    function startConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      particles = [];
+      for (let i = 0; i < 90; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * -canvas.height,
+          size: Math.random() * 9 + 6,
+          color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+          vx: (Math.random() - 0.5) * 4,
+          vy: Math.random() * 3 + 3,
+          rot: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 10
+        });
+      }
+
+      function updateConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vRot;
+          if (p.y > canvas.height) {
+            p.y = -20;
+            p.x = Math.random() * canvas.width;
+          }
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+          ctx.restore();
+        });
+        confettiAnimationId = requestAnimationFrame(updateConfetti);
+      }
+      updateConfetti();
+    }
+
+    function stopConfetti() {
+      if (confettiAnimationId) {
+        cancelAnimationFrame(confettiAnimationId);
+      }
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    window.addEventListener('resize', () => {
+      const canvas = document.getElementById('confettiCanvas');
+      if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+
+    window.onload = function() {
+      initStage1();
+    };
+  </script>
+</body>
+</html>
