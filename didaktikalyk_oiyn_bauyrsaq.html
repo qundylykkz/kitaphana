@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Бауырсақтың танымдық саяхаты - Дидактикалық ойын</title>
+  
+  <!-- Montserrat қарпін Google Fonts арқылы жүктеу -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome белгішелері -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Confetti-canvas мерекелік отшашу үшін -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    * {
+      font-family: 'Montserrat', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    /* Бауырсақтың домалау анимациясы */
+    @keyframes rollAndBounce {
+      0% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-16px) rotate(180deg); }
+      100% { transform: translateY(0) rotate(360deg); }
+    }
+    
+    .bauyrsaq-roll {
+      animation: rollAndBounce 1.4s infinite ease-in-out;
+    }
+
+    /* Ағаштар мен бұлттардың тербелісі */
+    @keyframes floatCloud {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(20px); }
+    }
+    .cloud-float {
+      animation: floatCloud 6s ease-in-out infinite;
+    }
+
+    /* Ылғалды әйнек пен ойыншық батырма стилі */
+    .game-card {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+      border-bottom: 5px solid rgba(0,0,0,0.15);
+    }
+    .game-card:active {
+      transform: translateY(3px);
+      border-bottom-width: 2px;
+    }
+    .action-btn {
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .action-btn:hover {
+      transform: translateY(-3px) scale(1.02);
+    }
+    .action-btn:active {
+      transform: translateY(2px) scale(0.98);
+    }
+
+    /* Пазл / сөз ұяшықтары */
+    .drop-slot {
+      border: 3px dashed #cbd5e1;
+      min-height: 58px;
+    }
+    .drop-slot.filled {
+      border: 3px solid #10b981;
+      background-color: #ecfdf5;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-sky-200 via-amber-50 to-emerald-100 min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
+
+  <!-- ЖОҒАРҒЫ ПАНЕЛЬ / НАВИГАЦИЯ -->
+  <header class="w-full bg-white/80 backdrop-blur-md shadow-sm border-b border-amber-200 sticky top-0 z-40 px-4 py-3">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 bg-amber-400 rounded-full flex items-center justify-center text-2xl shadow-inner border-2 border-amber-500">
+          🟡
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-extrabold text-amber-900 tracking-tight">БАУЫРСАҚ ЕРТЕГІСІ</h1>
+          <p class="text-xs font-semibold text-emerald-700 hidden sm:block">Танымдық дидактикалық ойын</p>
+        </div>
+      </div>
+
+      <!-- Ұпай мен Жұлдыздар -->
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center bg-amber-100 px-3 py-1.5 rounded-full border border-amber-300 shadow-sm">
+          <i class="fa-solid fa-star text-amber-500 text-lg mr-1.5 animate-pulse"></i>
+          <span id="score-badge" class="font-bold text-amber-900 text-base">0</span>
+        </div>
+
+        <button id="sound-toggle-btn" onclick="toggleSound()" class="w-10 h-10 rounded-full bg-sky-100 text-sky-700 hover:bg-sky-200 flex items-center justify-center transition border border-sky-300">
+          <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <button onclick="restartGameModal()" class="text-xs md:text-sm font-bold bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-2 rounded-xl transition border border-rose-300 flex items-center">
+          <i class="fa-solid fa-arrow-rotate-left mr-1.5"></i> Басынан
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- БАУЫРСАҚТЫҢ ЖОЛЫ (PROGRESS MAP) -->
+  <section class="max-w-4xl mx-auto w-full px-4 pt-4">
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-md border border-amber-200">
+      <div class="flex items-center justify-between relative">
+        <!-- Артқы сызық -->
+        <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-2.5 bg-slate-200 rounded-full -z-0"></div>
+        <div id="progress-bar-fill" class="absolute left-6 top-1/2 -translate-y-1/2 h-2.5 bg-amber-500 rounded-full -z-0 transition-all duration-700" style="width: 0%;"></div>
+
+        <!-- 1-кезең: Қоян -->
+        <div id="step-node-1" class="z-10 flex flex-col items-center cursor-pointer" onclick="goToStage(1)">
+          <div class="w-11 h-11 md:w-13 md:h-13 rounded-full bg-amber-400 border-4 border-white shadow flex items-center justify-center text-xl transition-transform hover:scale-110">
+            🐰
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 mt-1">Қоян</span>
+        </div>
+
+        <!-- 2-кезең: Қасқыр -->
+        <div id="step-node-2" class="z-10 flex flex-col items-center opacity-50 transition-opacity">
+          <div class="w-11 h-11 md:w-13 md:h-13 rounded-full bg-slate-300 border-4 border-white shadow flex items-center justify-center text-xl">
+            🐺
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 mt-1">Қасқыр</span>
+        </div>
+
+        <!-- 3-кезең: Аю -->
+        <div id="step-node-3" class="z-10 flex flex-col items-center opacity-50 transition-opacity">
+          <div class="w-11 h-11 md:w-13 md:h-13 rounded-full bg-slate-300 border-4 border-white shadow flex items-center justify-center text-xl">
+            🐻
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 mt-1">Аю</span>
+        </div>
+
+        <!-- 4-кезең: Түлкі -->
+        <div id="step-node-4" class="z-10 flex flex-col items-center opacity-50 transition-opacity">
+          <div class="w-11 h-11 md:w-13 md:h-13 rounded-full bg-slate-300 border-4 border-white shadow flex items-center justify-center text-xl">
+            🦊
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 mt-1">Түлкі</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- НЕГІЗГІ ОЙЫН АЛАҢЫ -->
+  <main class="flex-grow max-w-4xl mx-auto w-full px-4 py-6 flex flex-col justify-center">
+
+    <!-- КІРІСПЕ / БАСТАУ ЭКРАНЫ -->
+    <div id="screen-intro" class="bg-white/95 rounded-3xl p-6 md:p-8 shadow-xl border-4 border-amber-300 text-center relative overflow-hidden">
+      <!-- Декор элементтері -->
+      <div class="absolute -top-6 -left-6 text-6xl opacity-20 cloud-float">☁️</div>
+      <div class="absolute top-4 right-6 text-5xl opacity-20 cloud-float">🌲</div>
+
+      <div class="w-28 h-28 mx-auto my-3 bg-gradient-to-tr from-amber-400 to-yellow-200 rounded-full border-4 border-amber-500 shadow-xl flex items-center justify-center bauyrsaq-roll">
+        <span class="text-6xl">😋</span>
+      </div>
+
+      <h2 class="text-2xl md:text-3xl font-extrabold text-amber-900 mb-3">Бауырсақтың дидактикалық саяхаты!</h2>
+      <p class="text-slate-600 font-medium max-w-xl mx-auto text-sm md:text-base leading-relaxed mb-6">
+        Баяғыда ата мен әже бауырсақ пісіріпті. Бауырсақ терезеден орманға домалап кетіпті. Оған ормандағы жануарлардан өтуге көмектес! Әр жануардың саған арнаған қызықты тапсырмасы бар.
+      </p>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto mb-8 text-xs font-bold text-slate-700">
+        <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200">🐰 Санау және сан</div>
+        <div class="bg-indigo-50 p-2.5 rounded-xl border border-indigo-200">🐺 Сөз құрау</div>
+        <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">🐻 Пішін мен түс</div>
+        <div class="bg-rose-50 p-2.5 rounded-xl border border-rose-200">🦊 Зейін мен естелік</div>
+      </div>
+
+      <button onclick="startGame()" class="action-btn px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-extrabold text-lg md:text-xl rounded-2xl shadow-lg shadow-amber-300/50 inline-flex items-center space-x-3">
+        <span>Саяхатты бастау</span>
+        <i class="fa-solid fa-play"></i>
+      </button>
+    </div>
+
+    <!-- 1-КЕЗЕҢ: ҚОЯННЫҢ ТАПСЫРМАСЫ (Санау және математикалық логика) -->
+    <div id="screen-rabbit" class="hidden bg-white/95 rounded-3xl p-6 md:p-8 shadow-xl border-4 border-sky-300">
+      <div class="flex items-center justify-between border-b pb-4 mb-5 border-sky-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-14 h-14 bg-sky-100 rounded-2xl flex items-center justify-center text-3xl border border-sky-300">
+            🐰
+          </div>
+          <div>
+            <span class="text-xs uppercase font-extrabold tracking-wider text-sky-600">1-кезең • Қоянмен кездесу</span>
+            <h3 class="text-xl md:text-2xl font-bold text-slate-800">«Бауырсақ, мен сені жеймін!»</h3>
+          </div>
+        </div>
+        <span class="px-3 py-1 bg-sky-50 text-sky-700 rounded-full font-bold text-xs border border-sky-200">Логика & Санау</span>
+      </div>
+
+      <div class="bg-sky-50/70 p-4 rounded-2xl border border-sky-200 mb-6 text-center">
+        <p class="text-slate-700 font-semibold text-sm md:text-base">
+          Қоян: «Егер менің сәбіздерімді дұрыс санап, сұрағыма жауап берсең, сені ары қарай жіберемін!»
+        </p>
+      </div>
+
+      <!-- Интерактивті сұрақ алаңы -->
+      <div id="rabbit-task-container" class="space-y-6">
+        <div class="text-center">
+          <p id="rabbit-question-text" class="text-lg md:text-xl font-bold text-slate-800 mb-4">Себетте қанша сәбіз бар?</p>
+          <div id="rabbit-visual-items" class="flex flex-wrap justify-center items-center gap-3 p-4 bg-amber-50 rounded-2xl min-h-[110px] border border-amber-200 text-3xl">
+            <!-- Сәбіздер JS арқылы қосылады -->
+          </div>
+        </div>
+
+        <div id="rabbit-options" class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+          <!-- Жауап нұсқалары -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 2-КЕЗЕҢ: ҚАСҚЫРДЫҢ ТАПСЫРМАСЫ (Әріптерден сөз құрастыру) -->
+    <div id="screen-wolf" class="hidden bg-white/95 rounded-3xl p-6 md:p-8 shadow-xl border-4 border-indigo-300">
+      <div class="flex items-center justify-between border-b pb-4 mb-5 border-indigo-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center text-3xl border border-indigo-300">
+            🐺
+          </div>
+          <div>
+            <span class="text-xs uppercase font-extrabold tracking-wider text-indigo-600">2-кезең • Қасқырмен кездесу</span>
+            <h3 class="text-xl md:text-2xl font-bold text-slate-800">«Бауырсақ, тіліңді сына!»</h3>
+          </div>
+        </div>
+        <span class="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full font-bold text-xs border border-indigo-200">Сөздік қор</span>
+      </div>
+
+      <div class="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-200 mb-6 text-center">
+        <p class="text-slate-700 font-semibold text-sm md:text-base">
+          Қасқыр: «Шашылған әріптерден ертегі кейіпкерінің атын дұрыс ретпен құрастыр!»
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Сөз мақсаты туралы суреттеме -->
+        <div class="text-center">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Тапсырма: Сөз құра</span>
+          <p id="wolf-hint" class="text-lg font-bold text-indigo-900 mt-1">«Орман күзетшісі, жыртқыш жануар»</p>
+        </div>
+
+        <!-- Түсетін ұяшықтар (Drop Slots) -->
+        <div id="wolf-dropzone" class="flex justify-center items-center gap-2 md:gap-3 p-3 bg-slate-100 rounded-2xl min-h-[74px]">
+          <!-- Ұяшықтар JS арқылы жасалады -->
+        </div>
+
+        <!-- Басылатын әріптер блогы -->
+        <div class="text-center">
+          <p class="text-xs text-slate-500 font-semibold mb-2">Әріптерді ретімен бас:</p>
+          <div id="wolf-letter-bank" class="flex flex-wrap justify-center gap-2 md:gap-3">
+            <!-- Әріп түймелері -->
+          </div>
+        </div>
+
+        <div class="flex justify-center pt-2">
+          <button onclick="resetWolfLetters()" class="text-xs font-bold text-slate-600 bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-xl transition">
+            <i class="fa-solid fa-rotate-right mr-1"></i> Тазарту
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3-КЕЗЕҢ: АЮДЫҢ ТАПСЫРМАСЫ (Пішіндер мен заттарды тану) -->
+    <div id="screen-bear" class="hidden bg-white/95 rounded-3xl p-6 md:p-8 shadow-xl border-4 border-emerald-300">
+      <div class="flex items-center justify-between border-b pb-4 mb-5 border-emerald-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-3xl border border-emerald-300">
+            🐻
+          </div>
+          <div>
+            <span class="text-xs uppercase font-extrabold tracking-wider text-emerald-600">3-кезең • Аюдың илеуі</span>
+            <h3 class="text-xl md:text-2xl font-bold text-slate-800">«Бауырсақ, пішіндерді тап!»</h3>
+          </div>
+        </div>
+        <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full font-bold text-xs border border-emerald-200">Геометрия & Пішін</span>
+      </div>
+
+      <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200 mb-6 text-center">
+        <p class="text-slate-700 font-semibold text-sm md:text-base">
+          Аю: «Бауырсақтың өзі қандай пішінге ұқсайды? Мына заттардың ішінен дұрысын тап!»
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        <div class="text-center">
+          <p id="bear-question-prompt" class="text-lg md:text-xl font-bold text-slate-800 mb-2">
+            ДӨҢГЕЛЕК (ШЕҢБЕР) тәріздес затты тап:
+          </p>
+        </div>
+
+        <div id="bear-items-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- Геометриялық және тұрмыстық заттар карточкалары -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 4-КЕЗЕҢ: ТҮЛКІНІҢ ТАПСЫРМАСЫ (Есте сақтау және зейін - Мемори) -->
+    <div id="screen-fox" class="hidden bg-white/95 rounded-3xl p-6 md:p-8 shadow-xl border-4 border-rose-300">
+      <div class="flex items-center justify-between border-b pb-4 mb-5 border-rose-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center text-3xl border border-rose-300">
+            🦊
+          </div>
+          <div>
+            <span class="text-xs uppercase font-extrabold tracking-wider text-rose-600">4-кезең • Қу Түлкі</span>
+            <h3 class="text-xl md:text-2xl font-bold text-slate-800">«Мені алдап көрші!»</h3>
+          </div>
+        </div>
+        <span class="px-3 py-1 bg-rose-50 text-rose-700 rounded-full font-bold text-xs border border-rose-200">Мемори & Зейін</span>
+      </div>
+
+      <div class="bg-rose-50/70 p-4 rounded-2xl border border-rose-200 mb-4 text-center">
+        <p class="text-slate-700 font-semibold text-sm md:text-base">
+          Түлкі: «Мен сені жұтып қоймас үшін, жұп карточкаларды тауып, менің зейінімді басқаға бұр!»
+        </p>
+      </div>
+
+      <!-- Карточкалар торы (4x2 = 8 карточка, 4 жұп) -->
+      <div id="fox-memory-grid" class="grid grid-cols-4 gap-3 max-w-md mx-auto py-2">
+        <!-- Карточкалар JS арқылы салынады -->
+      </div>
+
+      <div class="text-center mt-4">
+        <span class="text-xs font-semibold text-slate-500">Табылған жұптар: <strong id="fox-pairs-count" class="text-rose-600">0</strong> / 4</span>
+      </div>
+    </div>
+
+    <!-- СОҢҒЫ ЖЕҢІС ЭКРАНЫ -->
+    <div id="screen-victory" class="hidden bg-white/95 rounded-3xl p-6 md:p-10 shadow-2xl border-4 border-amber-400 text-center relative">
+      <div class="w-28 h-28 mx-auto my-2 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-full border-4 border-amber-500 shadow-xl flex items-center justify-center text-6xl">
+        👑
+      </div>
+
+      <h2 class="text-2xl md:text-4xl font-extrabold text-amber-900 mb-2">ЖАРАЙСЫҢ, ДОСЫМ!</h2>
+      <p class="text-slate-600 font-semibold text-base md:text-lg mb-6">
+        Сен Бауырсаққа барлық жануарлардан аман өтіп, еркін саяхаттауға көмектестің! Түлкі де оны жей алмады!
+      </p>
+
+      <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 max-w-sm mx-auto mb-8">
+        <div class="text-slate-500 text-sm font-bold uppercase mb-1">Жинаған нәтижең:</div>
+        <div class="text-4xl font-extrabold text-amber-600 mb-2" id="final-score-text">100 ұпай</div>
+        <div class="text-xs text-emerald-600 font-bold flex items-center justify-center gap-1">
+          <i class="fa-solid fa-circle-check"></i> Барлық 4 дидактикалық кезең өтті
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <button onclick="startGame()" class="action-btn px-6 py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl shadow-md">
+          <i class="fa-solid fa-arrow-rotate-left mr-2"></i> Қайта ойнау
+        </button>
+        <button onclick="shareAchievement()" class="action-btn px-6 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl shadow-md">
+          <i class="fa-solid fa-copy mr-2"></i> Нәтижені көшіру
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- БАУЫРСАҚ ТУРАЛЫ ДИДАКТИКАЛЫҚ ӨЛЕҢ ЖОЛЫ (FOOTER) -->
+  <footer class="w-full bg-amber-100/70 border-t border-amber-200 py-3 px-4 text-center">
+    <p class="text-xs md:text-sm font-semibold text-amber-800 italic">
+      «Мен бауырсақ, бауырсақ, қаймаққа былғанған, майға піскен, терезеден қашқан...» 🎶
+    </p>
+  </footer>
+
+  <!-- ТАҢДАМАЛЫ ХАБАРЛАМА (CUSTOM TOAST / MODAL) -->
+  <div id="game-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-4 border-amber-300 transform scale-95 transition-transform duration-200" id="modal-box">
+      <div id="modal-icon" class="text-5xl mb-3">⭐</div>
+      <h4 id="modal-title" class="text-xl font-bold text-slate-800 mb-2">Тамаша!</h4>
+      <p id="modal-desc" class="text-slate-600 text-sm mb-6">Сұраққа дұрыс жауап бердіңіз.</p>
+      <button id="modal-btn" onclick="closeModal()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md">
+        Жалғастыру
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* ========================================================
+       1. ОЙЫН ДЫБЫСТАРЫ (Web Audio API - Сыртқы сілтемесіз)
+       ======================================================== */
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playBeep(freq = 440, type = 'sine', duration = 0.15) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        // Audio саясаты бұғаттаса елемейміз
+      }
+    }
+
+    function playSuccessSound() {
+      playBeep(523.25, 'triangle', 0.1); // C5
+      setTimeout(() => playBeep(659.25, 'triangle', 0.15), 100); // E5
+      setTimeout(() => playBeep(783.99, 'triangle', 0.25), 200); // G5
+    }
+
+    function playWrongSound() {
+      playBeep(260, 'sawtooth', 0.15);
+      setTimeout(() => playBeep(220, 'sawtooth', 0.25), 150);
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('sound-icon');
+      if (soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        playSuccessSound();
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark text-slate-400';
+      }
+    }
+
+    /* ========================================================
+       2. ОЙЫННЫҢ КҮЙІ (GAME STATE)
+       ======================================================== */
+    let currentStage = 0; // 0: intro, 1: rabbit, 2: wolf, 3: bear, 4: fox, 5: victory
+    let totalScore = 0;
+
+    // Кезең индикаторларын жаңарту
+    function updateProgress(stage) {
+      const progressBar = document.getElementById('progress-bar-fill');
+      const nodes = [1, 2, 3, 4];
+      
+      const percentages = { 1: 0, 2: 33, 3: 66, 4: 100, 5: 100 };
+      if (progressBar) {
+        progressBar.style.width = (percentages[stage] || 0) + '%';
+      }
+
+      nodes.forEach(n => {
+        const el = document.getElementById(`step-node-${n}`);
+        if (!el) return;
+        const circle = el.firstElementChild;
+        if (n < stage) {
+          el.classList.remove('opacity-50');
+          circle.className = 'w-11 h-11 md:w-13 md:h-13 rounded-full bg-emerald-500 text-white border-4 border-white shadow flex items-center justify-center text-lg';
+          circle.innerHTML = '✓';
+        } else if (n === stage) {
+          el.classList.remove('opacity-50');
+          circle.className = 'w-11 h-11 md:w-13 md:h-13 rounded-full bg-amber-400 text-slate-900 border-4 border-amber-600 shadow-lg flex items-center justify-center text-xl animate-bounce';
+        } else {
+          el.classList.add('opacity-50');
+          circle.className = 'w-11 h-11 md:w-13 md:h-13 rounded-full bg-slate-300 text-slate-500 border-4 border-white shadow flex items-center justify-center text-xl';
+        }
+      });
+    }
+
+    function setScore(score) {
+      totalScore = score;
+      document.getElementById('score-badge').innerText = totalScore;
+    }
+
+    function addScore(pts) {
+      setScore(totalScore + pts);
+    }
+
+    function showScreen(screenId) {
+      const screens = ['screen-intro', 'screen-rabbit', 'screen-wolf', 'screen-bear', 'screen-fox', 'screen-victory'];
+      screens.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+      const activeEl = document.getElementById(screenId);
+      if (activeEl) activeEl.classList.remove('hidden');
+    }
+
+    function startGame() {
+      setScore(0);
+      goToStage(1);
+    }
+
+    function goToStage(stageNum) {
+      currentStage = stageNum;
+      updateProgress(stageNum);
+
+      if (stageNum === 1) {
+        showScreen('screen-rabbit');
+        setupRabbitStage();
+      } else if (stageNum === 2) {
+        showScreen('screen-wolf');
+        setupWolfStage();
+      } else if (stageNum === 3) {
+        showScreen('screen-bear');
+        setupBearStage();
+      } else if (stageNum === 4) {
+        showScreen('screen-fox');
+        setupFoxStage();
+      } else if (stageNum === 5) {
+        showScreen('screen-victory');
+        document.getElementById('final-score-text').innerText = `${totalScore} ұпай`;
+        playSuccessSound();
+        triggerConfetti();
+      }
+    }
+
+    /* ========================================================
+       3. 1-КЕЗЕҢ: ҚОЯН (САНАУ ЖӘНЕ ЛОГИКА)
+       ======================================================== */
+    const rabbitTasks = [
+      {
+        question: "Қоянның себетінде қанша сәбіз бар?",
+        count: 5,
+        icon: "🥕",
+        options: [3, 4, 5, 6],
+        correct: 5
+      },
+      {
+        question: "Бауырсақ Қоянға тағы 2 алма берді. Мұнда неше алма бар?",
+        count: 4,
+        icon: "🍎",
+        options: [2, 4, 6, 5],
+        correct: 4
+      }
+    ];
+    let currentRabbitIndex = 0;
+
+    function setupRabbitStage() {
+      currentRabbitIndex = 0;
+      loadRabbitQuestion();
+    }
+
+    function loadRabbitQuestion() {
+      const task = rabbitTasks[currentRabbitIndex];
+      document.getElementById('rabbit-question-text').innerText = task.question;
+      
+      const visualContainer = document.getElementById('rabbit-visual-items');
+      visualContainer.innerHTML = '';
+      for (let i = 0; i < task.count; i++) {
+        const item = document.createElement('span');
+        item.className = 'inline-block transform hover:scale-125 transition duration-200 cursor-pointer';
+        item.innerText = task.icon;
+        item.onclick = () => playBeep(500 + i * 50, 'sine', 0.08);
+        visualContainer.appendChild(item);
+      }
+
+      const optionsContainer = document.getElementById('rabbit-options');
+      optionsContainer.innerHTML = '';
+
+      task.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'game-card bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 text-amber-900 font-extrabold text-2xl py-4 rounded-2xl transition action-btn flex items-center justify-center';
+        btn.innerText = opt;
+        btn.onclick = () => checkRabbitAnswer(opt, task.correct);
+        optionsContainer.appendChild(btn);
+      });
+    }
+
+    function checkRabbitAnswer(selected, correct) {
+      if (selected === correct) {
+        playSuccessSound();
+        addScore(25);
+        if (currentRabbitIndex + 1 < rabbitTasks.length) {
+          currentRabbitIndex++;
+          showModal("Дұрыс!", "Тамаша санадың! Келесі сұраққа жауап берші.", "Алға", () => {
+            loadRabbitQuestion();
+          });
+        } else {
+          showModal("Жарайсың!", "Қоян риза болып: «Өте ақылды екенсің, өте ғой!» - деді.", "Қасқырға бару 🐺", () => {
+            goToStage(2);
+          });
+        }
+      } else {
+        playWrongSound();
+        showModal("Қайта ойлан!", "Сәбіздерді асықпай саусағыңмен санап көрші.", "Қайта көру");
+      }
+    }
+
+    /* ========================================================
+       4. 2-КЕЗЕҢ: ҚАСҚЫР (СӨЗ ҚҰРАУ - ДИДАКТИКАЛЫҚ ПАЗЛ)
+       ======================================================== */
+    const wolfWordData = {
+      word: "БАУЫРСАҚ",
+      hint: "Әженің қаймаққа былғап пісірген ертегі бас кейіпкері кім?",
+      shuffled: ["Ы", "Б", "А", "Р", "У", "Қ", "С", "А"]
+    };
+
+    let wolfCurrentLetters = [];
+
+    function setupWolfStage() {
+      document.getElementById('wolf-hint').innerText = `«${wolfWordData.hint}»`;
+      wolfCurrentLetters = [];
+      renderWolfSlots();
+      renderWolfBank();
+    }
+
+    function renderWolfSlots() {
+      const dropzone = document.getElementById('wolf-dropzone');
+      dropzone.innerHTML = '';
+      const targetLength = wolfWordData.word.length;
+
+      for (let i = 0; i < targetLength; i++) {
+        const slot = document.createElement('div');
+        const letter = wolfCurrentLetters[i] || '';
+        slot.className = `w-10 h-12 md:w-12 md:h-14 rounded-xl flex items-center justify-center font-extrabold text-lg md:text-xl transition drop-slot ${letter ? 'filled bg-emerald-100 text-emerald-800' : 'bg-white text-slate-400'}`;
+        slot.innerText = letter;
+        dropzone.appendChild(slot);
+      }
+    }
+
+    function renderWolfBank() {
+      const bank = document.getElementById('wolf-letter-bank');
+      bank.innerHTML = '';
+
+      wolfWordData.shuffled.forEach((char, idx) => {
+        const btn = document.createElement('button');
+        btn.id = `wolf-char-btn-${idx}`;
+        btn.className = 'w-11 h-11 md:w-13 md:h-13 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-lg md:text-xl rounded-xl shadow-md action-btn transition';
+        btn.innerText = char;
+        btn.onclick = () => selectWolfLetter(char, idx);
+        bank.appendChild(btn);
+      });
+    }
+
+    function selectWolfLetter(char, idx) {
+      if (wolfCurrentLetters.length < wolfWordData.word.length) {
+        playBeep(400 + wolfCurrentLetters.length * 40, 'sine', 0.1);
+        wolfCurrentLetters.push(char);
+        const btn = document.getElementById(`wolf-char-btn-${idx}`);
+        if (btn) btn.classList.add('opacity-30', 'pointer-events-none');
+        renderWolfSlots();
+
+        // Сөз толық жиналғанда тексеру
+        if (wolfCurrentLetters.length === wolfWordData.word.length) {
+          const formedWord = wolfCurrentLetters.join('');
+          if (formedWord === wolfWordData.word) {
+            playSuccessSound();
+            addScore(25);
+            setTimeout(() => {
+              showModal("Керемет!", "Қасқыр риза болды: «Сөзді тез құрастырдың! Жолың болсын!»", "Аюға бару 🐻", () => {
+                goToStage(3);
+              });
+            }, 300);
+          } else {
+            playWrongSound();
+            setTimeout(() => {
+              showModal("Сөз дұрыс емес!", "Әріптердің орны ауысып кетті. Қайта құрастырып көр!", "Қайталау", () => {
+                resetWolfLetters();
+              });
+            }, 300);
+          }
+        }
+      }
+    }
+
+    function resetWolfLetters() {
+      wolfCurrentLetters = [];
+      renderWolfSlots();
+      renderWolfBank();
+    }
+
+    /* ========================================================
+       5. 3-КЕЗЕҢ: АЮ (ПІШІНДЕР МЕН КӨЛЕМДІ ТАНУ)
+       ======================================================== */
+    const bearItems = [
+      { name: "Бауырсақ", icon: "🟡", isCircle: true, label: "Дөңгелек" },
+      { name: "Кітап", icon: "📘", isCircle: false, label: "Тіктөртбұрыш" },
+      { name: "Қарбыз", icon: "🍉", isCircle: true, label: "Шар тәрізді" },
+      { name: "Үшбұрышты үй", icon: "⛺", isCircle: false, label: "Үшбұрыш" },
+      { name: "Күн", icon: "☀️", isCircle: true, label: "Дөңгелек" },
+      { name: "Қорап", icon: "📦", isCircle: false, label: "Шаршы" }
+    ];
+
+    let bearFoundCount = 0;
+    const targetBearTotal = 3; // 3 дөңгелек зат бар
+
+    function setupBearStage() {
+      bearFoundCount = 0;
+      const grid = document.getElementById('bear-items-grid');
+      grid.innerHTML = '';
+
+      bearItems.forEach((item, index) => {
+        const card = document.createElement('button');
+        card.id = `bear-item-${index}`;
+        card.className = 'game-card bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-300 p-4 rounded-2xl flex flex-col items-center justify-center transition action-btn';
+        card.innerHTML = `
+          <div class="text-4xl mb-2">${item.icon}</div>
+          <span class="font-bold text-slate-800 text-sm">${item.name}</span>
+          <span class="text-[11px] text-slate-500 font-semibold">${item.label}</span>
+        `;
+        card.onclick = () => checkBearItem(item, index);
+        grid.appendChild(card);
+      });
+    }
+
+    function checkBearItem(item, index) {
+      const card = document.getElementById(`bear-item-${index}`);
+      if (!card || card.disabled) return;
+
+      if (item.isCircle) {
+        playSuccessSound();
+        card.classList.remove('bg-emerald-50', 'border-emerald-300');
+        card.classList.add('bg-green-200', 'border-green-500', 'pointer-events-none');
+        card.disabled = true;
+        bearFoundCount++;
+        addScore(10);
+
+        if (bearFoundCount === targetBearTotal) {
+          setTimeout(() => {
+            showModal("Өте жақсы!", "Аю барлық дөңгелек заттарды танығаныңа таңғалып, жол берді!", "Түлкіге бару 🦊", () => {
+              goToStage(4);
+            });
+          }, 400);
+        }
+      } else {
+        playWrongSound();
+        card.classList.add('animate-shake', 'bg-rose-100', 'border-rose-300');
+        setTimeout(() => {
+          card.classList.remove('animate-shake', 'bg-rose-100', 'border-rose-300');
+        }, 500);
+      }
+    }
+
+    /* ========================================================
+       6. 4-КЕЗЕҢ: ТҮЛКІ (ЗЕЙІН МЕН ЕСТЕ САҚТАУ - МЕМОРИ КАРТА)
+       ======================================================== */
+    const memoryEmojis = ["👵", "👴", "🐰", "🐺"]; // 4 жұп = 8 карта
+    let memoryCards = [];
+    let flippedIndices = [];
+    let matchedPairs = 0;
+
+    function setupFoxStage() {
+      matchedPairs = 0;
+      flippedIndices = [];
+      document.getElementById('fox-pairs-count').innerText = "0";
+
+      // Жұптарды құрастыру және араластыру
+      const deck = [...memoryEmojis, ...memoryEmojis].sort(() => Math.random() - 0.5);
+      memoryCards = deck.map((emoji, index) => ({
+        id: index,
+        emoji: emoji,
+        isMatched: false
+      }));
+
+      renderFoxCards();
+    }
+
+    function renderFoxCards() {
+      const grid = document.getElementById('fox-memory-grid');
+      grid.innerHTML = '';
+
+      memoryCards.forEach((card, idx) => {
+        const btn = document.createElement('button');
+        btn.id = `memory-card-${idx}`;
+        btn.className = 'aspect-square bg-gradient-to-br from-amber-400 to-amber-500 text-white font-extrabold text-2xl md:text-3xl rounded-2xl shadow-md border-2 border-amber-600 flex items-center justify-center transition-transform duration-300';
+        btn.innerHTML = '❓';
+        btn.onclick = () => flipCard(idx);
+        grid.appendChild(btn);
+      });
+    }
+
+    function flipCard(idx) {
+      if (flippedIndices.length >= 2 || flippedIndices.includes(idx) || memoryCards[idx].isMatched) {
+        return;
+      }
+
+      playBeep(450, 'triangle', 0.08);
+      flippedIndices.push(idx);
+
+      const btn = document.getElementById(`memory-card-${idx}`);
+      btn.innerHTML = memoryCards[idx].emoji;
+      btn.classList.remove('from-amber-400', 'to-amber-500');
+      btn.classList.add('bg-white', 'text-slate-800', 'border-amber-400');
+
+      if (flippedIndices.length === 2) {
+        const first = memoryCards[flippedIndices[0]];
+        const second = memoryCards[flippedIndices[1]];
+
+        if (first.emoji === second.emoji) {
+          playSuccessSound();
+          first.isMatched = true;
+          second.isMatched = true;
+          matchedPairs++;
+          document.getElementById('fox-pairs-count').innerText = matchedPairs;
+          addScore(10);
+
+          const card1 = document.getElementById(`memory-card-${flippedIndices[0]}`);
+          const card2 = document.getElementById(`memory-card-${flippedIndices[1]}`);
+          card1.classList.add('bg-emerald-100', 'border-emerald-500');
+          card2.classList.add('bg-emerald-100', 'border-emerald-500');
+
+          flippedIndices = [];
+
+          if (matchedPairs === 4) {
+            setTimeout(() => {
+              showModal("ЖЕҢІС!", "Түлкінің көзін алаңдатып, Бауырсақты аман алып қалдың!", "Нәтижені көру 🏆", () => {
+                goToStage(5);
+              });
+            }, 500);
+          }
+        } else {
+          playWrongSound();
+          setTimeout(() => {
+            flippedIndices.forEach(fIdx => {
+              const b = document.getElementById(`memory-card-${fIdx}`);
+              b.innerHTML = '❓';
+              b.classList.remove('bg-white', 'text-slate-800', 'border-amber-400');
+              b.classList.add('from-amber-400', 'to-amber-500');
+            });
+            flippedIndices = [];
+          }, 800);
+        }
+      }
+    }
+
+    /* ========================================================
+       7. МОДАЛЬДІ БАСҚАРУ ЖӘНЕ ҚОСЫМША ФУНКЦИЯЛАР
+       ======================================================== */
+    let modalCallback = null;
+
+    function showModal(title, desc, btnText = "Жарайды", callback = null) {
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-desc').innerText = desc;
+      document.getElementById('modal-btn').innerText = btnText;
+      modalCallback = callback;
+      document.getElementById('game-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('game-modal').classList.add('hidden');
+      if (typeof modalCallback === 'function') {
+        const cb = modalCallback;
+        modalCallback = null;
+        cb();
+      }
+    }
+
+    function restartGameModal() {
+      showModal("Қайта бастау", "Ойынды басынан бастағыңыз келе ме?", "Иә, бастау", () => {
+        startGame();
+      });
+    }
+
+    function shareAchievement() {
+      const textToCopy = `Мен «Бауырсақ» ертегісінің дидактикалық ойынында ${totalScore} ұпай жинап, Бауырсақты құтқардым!`;
+      
+      // Тапсырма талабы: Clipboard үшін document.execCommand('copy') пайдалану
+      const tempInput = document.createElement("input");
+      tempInput.value = textToCopy;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempInput);
+
+      showModal("Көшірілді!", "Нәтиже буферге сақталды: " + textToCopy, "Жақсы");
+    }
+
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    // Бет жүктелгенде алғашқы күй
+    window.onload = function() {
+      updateProgress(1);
+    };
+  </script>
+</body>
+</html>
